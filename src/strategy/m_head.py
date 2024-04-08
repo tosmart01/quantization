@@ -141,7 +141,7 @@ class MHeadStrategy(BaseStrategy):
             raise DateTimeError()
         while True:
             period = 60 - datetime.now().second
-            if period >= 4:
+            if period >= 5:
                 time.sleep(0.2)
             else:
                 break
