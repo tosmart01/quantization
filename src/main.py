@@ -20,4 +20,3 @@ if __name__ == '__main__':
                       minute='14,29,44,59', second='30',
                       )
     scheduler.start()
-
