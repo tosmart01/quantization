@@ -6,7 +6,9 @@
 # @Software: PyCharm
 from abc import ABC, abstractmethod
 
-from config.settings import MAX_VALUE_PERIOD
+import pandas as pd
+
+from config.settings import MAX_VALUE_PERIOD, DECLINE_HIGH_TIME
 from exceptions.custom_exceptions import DataDeficiencyError
 from order import factory_order_model
 from schema.backtest import Backtest
@@ -28,10 +30,18 @@ class BaseStrategy(ABC):
         self.leverage = leverage
         self.usdt = usdt
 
+    def high_interval_check(self, k: pd.Series, compare_k: pd.Series) -> bool:
+        compare_k_count = DECLINE_HIGH_TIME / 15
+        k_count = k.name - compare_k.name
+        if k_count >= compare_k_count or k_count <=4:
+            return True
+        else:
+            return False
+
     @property
     def buy_usdt(self):
         if self.usdt == 'ALL':
-            return self.order_module.get_all_money()
+            return round(self.order_module.get_all_money() * 0.85, 2)
         else:
             return self.usdt
 

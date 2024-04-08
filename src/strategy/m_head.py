@@ -12,7 +12,8 @@ from common.log import logger
 from common.tools import record_time
 from config.settings import M_DECLINE_PERCENT, CRON_INTERVAL
 from strategy.base import BaseStrategy
-from strategy.tools import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, find_low_index
+from strategy.tools import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, find_low_index, \
+    check_high_value_in_range
 from order.enums import DirectionEnum, SideEnum
 from schema.order_schema import OrderModel
 from exceptions.custom_exceptions import DateTimeError
@@ -39,13 +40,15 @@ class MHeadStrategy(BaseStrategy):
                              ]
         ge_last_high_k_list = []
         near_high_list = []
-        if (last_k.name - last_high_k.name) <= 4 and any(pct_change_verify):
+        is_near_high_k = last_k.name - last_high_k.name <= 4
+        if self.high_interval_check(last_k, last_high_k) and any(pct_change_verify):
             overtop = False
+            compare_range = last_high_k.name - 3 if is_near_high_k else last_k.name - 4
             mid = df.loc[last_high_k.name - 4: last_high_k.name, 'close'].mean()
-            for k in df.loc[last_high_k.name - 3: last_k.name].itertuples():
+            for k in df.loc[compare_range: last_k.name].itertuples():
                 current_am = recent_kline_avg_amplitude(df.loc[k.Index - 9: k.Index])
                 # 命中价格区间
-                verify = (compare_high_k.high - 0.95 * AM) <= k.high <= (compare_high_k.high + 0.85 * AM)
+                verify = check_high_value_in_range(k, compare_high_k, AM)
                 shadow_ratio = get_shadow_line_ratio(k)
                 # 上引线过长排除
                 if shadow_ratio >= 0.5 and current_am * 1.5 < k.high - k.low:
@@ -53,7 +56,7 @@ class MHeadStrategy(BaseStrategy):
                 if k.high < mid:
                     verify = False
                 # 涨幅过大排除
-                if k.high > (compare_high_k.high + 1 * AM):
+                if k.high > (compare_high_k.high + 1 * AM) and is_near_high_k:
                     overtop = True
                 if verify and k.high > compare_high_k.high:
                     ge_last_high_k_list.append(True)

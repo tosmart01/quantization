@@ -30,9 +30,11 @@ MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 10))
 # 获取极值区间长度
 MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 15))
 # 每次交易最大k线数量
-TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 200))
+TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 300))
 # 开仓M头 头部到颈部跌幅
 M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.01))
+# 判断为远距离高点时间, 单位 分钟
+DECLINE_HIGH_TIME = int(os.getenv("DECLINE_HIGH_TIME", 1440))
 
 
 DB_URL = os.getenv("DB_URL", f"sqlite:///{os.path.join(BASE_DIR, 'data', 'trade.db')}")

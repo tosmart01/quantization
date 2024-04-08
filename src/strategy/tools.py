@@ -5,9 +5,10 @@
 # @File: tools.py
 # @Software: PyCharm
 import pandas as pd
+from pandas import Timestamp
 from scipy.signal import find_peaks
 
-from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD
+from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, DECLINE_HIGH_TIME
 
 
 def recent_kline_avg_amplitude(data: pd.DataFrame) -> float:
@@ -25,6 +26,18 @@ def average_volume_around_high_point(data: pd.DataFrame) -> float:
     @return:
     """
     ...
+
+
+def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, AM: float, ) -> bool:
+    """
+    验证当前k是否在对比k的高点区间内
+    @param k: 当前k
+    @param compare_k: 对比k
+    @param AM: 近N日价格波动区间
+    @return:
+    """
+    verify = (compare_k.high - 0.95 * AM) <= k.high <= (compare_k.high + 0.85 * AM)
+    return verify
 
 
 def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominence=None) -> list[int]:
@@ -50,10 +63,24 @@ def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominen
             max_value = round_data.max()
             if max_value == df.loc[index, 'high']:
                 new_index_list.append(index)
-    # if len(new_index_list) >= 2 and new_index_list[-1] != len(df) - 1:
-    #     mean_price_change = (df.tail(10)['high'] - df.tail(10)['low']).mean()
-    #     if (df.iloc[-1]['high'] - df.loc[new_index_list[-1], 'high']) <= mean_price_change:
-    #         new_index_list.append(len(df) - 1)
+    # if len(new_index_list) > 1:
+    #     k = df.loc[new_index_list[-1]]
+    #     AM = recent_kline_avg_amplitude(df.loc[k.name - 9: k.name])
+    #     last_index = new_index_list.pop()
+    #     distant_high_list: pd.Series = abs(df.loc[(df.index.isin(new_index_list[:-1])), 'high'] - k.high).sort_values()[:3]
+    #     distant_high_list = distant_high_list.sort_index()
+    #     # 添加较远距离高点到列表末尾, 优先考虑远距离高点
+    #     for index in distant_high_list.index:
+    #         if index not in new_index_list[-3:]:
+    #             new_k: pd.Series = df.loc[index]
+    #             # 判定高点是距离当前k线较远的k线高点
+    #             if (k.date - new_k.date).total_seconds() >= DECLINE_HIGH_TIME * 60:
+    #                 if check_high_value_in_range(k, new_k, AM):
+    #                     if new_k.high >= df.loc[index + 1: k.name - 1, 'high'].max():
+    #                         new_index_list.remove(index)
+    #                         new_index_list.append(index)
+    #                         break
+    #     new_index_list.append(last_index)
     return new_index_list
 
 
