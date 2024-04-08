@@ -6,6 +6,7 @@
 # @Software: PyCharm
 import json
 
+import pandas as pd
 from tqdm import tqdm
 
 from common.json_encode import ComplexEncoder
@@ -22,7 +23,7 @@ class MTestStrategy(MHeadStrategy):
     def entry_signal(self) -> OrderModel:
         ### 测试使用 =========
         # test_dates = [
-        #     pd.to_datetime("2023-01-11 23:15:00")
+        #     pd.to_datetime("2023-04-29 22:45:00")
         # ]
         # df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
         # if df.iloc[-1]['date'] not in test_dates:
@@ -67,10 +68,10 @@ class MTestStrategy(MHeadStrategy):
 
 
 if __name__ == '__main__':
-        MTestStrategy(symbol="ETHUSDT",
-                 interval='15m',
-                 backtest=True,
-                 usdt=10,
-                 leverage=3,
-                 order_kind=OrderKindEnum.BINANCE,
-                 ).execute()
+    MTestStrategy(symbol="ETHUSDT",
+                  interval='15m',
+                  backtest=True,
+                  usdt="ALL",
+                  leverage=3,
+                  order_kind=OrderKindEnum.BINANCE,
+                  ).execute()
