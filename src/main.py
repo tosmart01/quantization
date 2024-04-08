@@ -12,7 +12,7 @@ if __name__ == '__main__':
     model = strategy(symbol="ETHUSDT",
              interval='15m',
              backtest=False,
-             usdt=22,
+             usdt="ALL",
              leverage=10,
              order_kind=OrderKindEnum.BINANCE,
              )
