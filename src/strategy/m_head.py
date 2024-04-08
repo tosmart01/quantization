@@ -33,10 +33,13 @@ class MHeadStrategy(BaseStrategy):
         if last_k.close >= compare_high_k.high:
             return False, last_k
         AM = recent_kline_avg_amplitude(df.loc[compare_high_k.name - 9: compare_high_k.name])
-        near_high_list = []
         low_value = df.loc[compare_high_k.name: last_k.name, 'low'].min()
-        pct_change = (last_k.high - low_value) / low_value
-        if (last_k.name - last_high_k.name) <= 4 and pct_change >= M_DECLINE_PERCENT:
+        pct_change_verify = [(last_k.high - low_value) / low_value > M_DECLINE_PERCENT,
+                             (last_high_k.high - low_value) / low_value > M_DECLINE_PERCENT
+                             ]
+        ge_last_high_k_list = []
+        near_high_list = []
+        if (last_k.name - last_high_k.name) <= 4 and any(pct_change_verify):
             overtop = False
             mid = df.loc[last_high_k.name - 4: last_high_k.name, 'close'].mean()
             for k in df.loc[last_high_k.name - 3: last_k.name].itertuples():
@@ -52,9 +55,11 @@ class MHeadStrategy(BaseStrategy):
                 # 涨幅过大排除
                 if k.high > (compare_high_k.high + 1 * AM):
                     overtop = True
+                if verify and k.high > compare_high_k.high:
+                    ge_last_high_k_list.append(True)
                 near_high_list.append(verify)
             verify_length = len(list(filter(None, near_high_list)))
-            if 1 <= verify_length <= 3 and not overtop:
+            if verify_length >= 1 and not overtop and len(ge_last_high_k_list) <= 2:
                 # 阴线命中
                 if last_k.close < last_k.open:
                     # 命中k线涨幅限制
@@ -74,7 +79,7 @@ class MHeadStrategy(BaseStrategy):
                 return verify, compare_high_k
         return False, df.loc[0]
 
-    def get_low_point(self, df: pd.DataFrame, order: OrderModel) -> pd.Series:
+    def get_low_point(self, df: pd.DataFrame, order: OrderModel) -> pd.Series | None:
         low_index_list = find_low_index(df)
         low_df = df.loc[low_index_list]
         low_point_left = low_df.loc[low_df['date'] < order.compare_data.date]
@@ -84,6 +89,9 @@ class MHeadStrategy(BaseStrategy):
             low_point = low_point_right.iloc[0]
         elif not low_point_left.empty:
             low_point = low_point_left.iloc[-1]
+        start_k = df.loc[df['date'] == order.start_data.date].iloc[-1]
+        if abs(start_k.name - low_point.name) <= 8:
+            return None
         return low_point
 
     def entry_signal(self) -> OrderModel:
