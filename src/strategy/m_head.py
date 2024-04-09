@@ -94,6 +94,10 @@ class MHeadStrategy(BaseStrategy):
             low_point = low_point_left.iloc[-1]
         start_k = df.loc[df['date'] == order.start_data.date].iloc[-1]
         if abs(start_k.name - low_point.name) <= 8:
+            min_index = df.loc[(df.date > order.compare_data.date) & (df.date < order.start_data.date), 'low'].idxmin()
+            min_point: pd.Series = df.loc[min_index]
+            if min_point.low <= low_point.low:
+                return min_point
             return None
         return low_point
 
