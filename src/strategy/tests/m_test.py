@@ -75,3 +75,4 @@ if __name__ == '__main__':
                   leverage=3,
                   order_kind=OrderKindEnum.BINANCE,
                   ).execute()
+
