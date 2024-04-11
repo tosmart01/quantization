@@ -49,7 +49,6 @@ class DataModule:
                 df = pd.read_pickle(os.path.join(BACKTEST_DATA_DIR, path))
                 df['tr'] = df['high'] - df['low']
                 df['is_bull'] = df['close'] > df['open']
-                return df.loc[(df['date'] >= '2024-02-10 00:00:00') & (df['date'] < '2024-02-18 00:30:00')
-                       ].reset_index(drop=True)
-                # return df.reset_index(drop=True)
+                # return df.loc[(df['date'] >= '2024-02-10 00:00:00') & (df['date'] < '2024-02-18 00:30:00') ].reset_index(drop=True)
+                return df.reset_index(drop=True)
         raise DataDeficiencyError()
