@@ -64,7 +64,7 @@ class BinanceOrder(OrderMixin):
 
     @error_email_notify(name="创建止损失败")
     def create_stop_loss(self, order: Order):
-        stop_price = order.compare_data.get("high")
+        stop_price = order.compare_data.get("close")
         if order.side == SideEnum.BUY.value:
             side = SideEnum.SELL
         else:
