@@ -40,7 +40,7 @@ def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, AM: float, ) -
     return verify
 
 
-def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominence=None) -> list[int]:
+def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominence=0) -> list[int]:
     """
     计算数据内局部最大值索引, 为了避免最后一个值是最大值时无法找到，
     尾部插入一个值, 为最后一个值 减去万分之一

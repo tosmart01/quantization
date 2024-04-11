@@ -26,7 +26,7 @@ PROXIES = {
 # 回测数据目录
 BACKTEST_DATA_DIR = os.getenv("BACKTEST_DATA_DIR", os.path.join(BASE_DIR, 'data', 'test'))
 # 获取极值区间长度
-MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 10))
+MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 20))
 # 获取极值区间长度
 MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 15))
 # 每次交易最大k线数量
