@@ -26,13 +26,13 @@ PROXIES = {
 # 回测数据目录
 BACKTEST_DATA_DIR = os.getenv("BACKTEST_DATA_DIR", os.path.join(BASE_DIR, 'data', 'test'))
 # 获取极值区间长度
-MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 10))
+MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 20))
 # 获取极值区间长度
 MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 15))
 # 每次交易最大k线数量
 TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 300))
 # 开仓M头 头部到颈部跌幅
-M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.01))
+M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.008))
 # 判断为远距离高点时间, 单位 分钟
 DECLINE_HIGH_TIME = int(os.getenv("DECLINE_HIGH_TIME", 1440))
 

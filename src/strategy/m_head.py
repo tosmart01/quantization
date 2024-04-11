@@ -33,6 +33,8 @@ class MHeadStrategy(BaseStrategy):
         last_k: pd.Series = df.iloc[-1]
         if last_k.close >= compare_high_k.high:
             return False, last_k
+        if last_k.name - last_high_k.name > 2:
+            return False, last_k
         AM = recent_kline_avg_amplitude(df.loc[compare_high_k.name - 9: compare_high_k.name])
         low_value = df.loc[compare_high_k.name: last_k.name, 'low'].min()
         pct_change_verify = [(last_k.high - low_value) / low_value > M_DECLINE_PERCENT,
@@ -43,9 +45,8 @@ class MHeadStrategy(BaseStrategy):
         is_near_high_k = last_k.name - last_high_k.name <= 4
         if self.high_interval_check(last_k, last_high_k) and any(pct_change_verify):
             overtop = False
-            compare_range = last_high_k.name - 3 if is_near_high_k else last_k.name - 4
             mid = df.loc[last_high_k.name - 4: last_high_k.name, 'close'].mean()
-            for k in df.loc[compare_range: last_k.name].itertuples():
+            for k in df.loc[last_high_k.name: last_k.name].itertuples():
                 current_am = recent_kline_avg_amplitude(df.loc[k.Index - 9: k.Index])
                 # 命中价格区间
                 verify = check_high_value_in_range(k, compare_high_k, AM)
@@ -66,16 +67,16 @@ class MHeadStrategy(BaseStrategy):
                 # 阴线命中
                 if last_k.close < last_k.open:
                     # 命中k线涨幅限制
-                    if abs(last_k.close - last_k.open) <= 1.5 * AM:
+                    if last_k.close - last_k.open <= 1.5 * AM:
                         # if self.check_near_volume(last_high_k, compare_high_k, df):
                         return (True, compare_high_k)
         return False, compare_high_k
 
     def check_near_prior_high_point(self, df: pd.DataFrame) -> tuple[bool, pd.Series]:
-        high_index_list = find_high_index(df, prominence=0)
+        high_index_list = find_high_index(df)
         if len(high_index_list) < 2:
             return False, df.iloc[1]
-        compare_high_list = [-i - 2 for i in range(len(high_index_list) - 1)][:3]
+        compare_high_list = [-i - 2 for i in range(len(high_index_list) - 1)][:2]
         for index in compare_high_list:
             verify, compare_high_k = self.find_enter_point(index, df, high_index_list)
             if verify:
@@ -131,11 +132,11 @@ class MHeadStrategy(BaseStrategy):
         if low_point is not None:
             # 近3跟k线接近前期低点，并且当前k线收阳线，平仓
             for row in df.loc[current_k.name - 2: current_k.name].itertuples():
-                if abs(row.low - low_point.close) <= AM * 0.10 and current_k.is_bull:
+                if abs(row.low - low_point.low) <= AM * 0.10 and current_k.is_bull:
                     checkout = True
                     break
                 # 如果已经低于前期低点，收阳线平仓
-                if row.low < low_point.close and current_k.is_bull:
+                if row.low < low_point.low and current_k.is_bull:
                     checkout = True
                     break
         if not checkout:

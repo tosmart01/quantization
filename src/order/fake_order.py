@@ -35,8 +35,8 @@ class FakeOrder(object):
         stop = False
         close_price = None
         if direction == DirectionEnum.SHORT:
-            stop = current_k.high > order.compare_data.high and current_k.high > order.start_data.high
-            close_price = order.compare_data.high
+            stop = current_k.high > order.compare_data.close
+            close_price = order.compare_data.close
         if direction == DirectionEnum.LONG:
             stop = current_k.low < order.compare_data.low
             close_price = order.compare_data.low
