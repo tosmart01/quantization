@@ -58,7 +58,7 @@ class MTestStrategy(MHeadStrategy):
                 else:
                     self.entry_signal()
             except TestEndingError:
-                json.dump([i.dict() for i in self.backtest_info.order_list], open('backdump.json', 'w'),
+                json.dump([i.dict() for i in self.backtest_info.order_list], open(f'{self.symbol}_backdump.json', 'w'),
                           ensure_ascii=False, cls=ComplexEncoder)
                 logger.info(f"回测结束")
                 return
@@ -69,7 +69,7 @@ class MTestStrategy(MHeadStrategy):
 
 if __name__ == '__main__':
     MTestStrategy(symbol="ETHUSDT",
-                  interval='30m',
+                  interval='1h',
                   backtest=True,
                   usdt="ALL",
                   leverage=3,

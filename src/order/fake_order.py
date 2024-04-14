@@ -30,10 +30,10 @@ class FakeOrder(object):
                                 open_price=k.close,
                                 interval=interval, compare_data=compare_data, side=side, leverage=leverage)
         from strategy.tools import get_low_point
-        low_point = get_low_point(df, fake_order)
-        fake_order.low_point = low_point
         stop_price = get_stop_loss_price(fake_order, k)
         fake_order.stop_price = stop_price
+        low_point = get_low_point(df, fake_order)
+        fake_order.low_point = low_point
         backtest.order_list.append(fake_order)
         return fake_order
 

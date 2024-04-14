@@ -4,6 +4,8 @@
 # @Site: 
 # @File: __init__.py.py
 # @Software: PyCharm
+import warnings
+warnings.filterwarnings("ignore")
 from strategy.m_head import MHeadStrategy, BaseStrategy
 from exceptions.custom_exceptions import UnsupportedStrategyError
 

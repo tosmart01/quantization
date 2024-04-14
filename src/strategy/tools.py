@@ -8,7 +8,7 @@ import pandas as pd
 from pandas import Timestamp
 from scipy.signal import find_peaks
 
-from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, DECLINE_HIGH_TIME, MIN_TRADE_COUNT
+from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, DECLINE_HIGH_TIME, MIN_TRADE_COUNT, M_DECLINE_PERCENT
 from schema.order_schema import OrderModel
 
 
@@ -133,6 +133,7 @@ def get_low_point(df: pd.DataFrame, order: OrderModel) -> pd.Series | None:
         min_index = df.loc[(df.date > order.compare_data.date) & (df.date < order.start_data.date), 'low'].idxmin()
         min_point: pd.Series = df.loc[min_index]
         if min_point.low <= low_point.low:
-            return min_point
-        return None
+            low_point = min_point
+    # if (order.compare_data.high - low_point.low) / low_point.low > M_DECLINE_PERCENT * 2:
+    #     low_point.low = order.start_data.close * (1 - M_DECLINE_PERCENT * 1.5)
     return low_point

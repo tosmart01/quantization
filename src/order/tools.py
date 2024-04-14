@@ -11,9 +11,10 @@ from schema.order_schema import OrderModel
 
 
 def get_stop_loss_price(order: OrderModel, current_k: pd.Series) -> float:
-    pct_change = (order.compare_data.high - order.start_data.close) / order.start_data.close
+    compare_high = max(order.compare_data.high, order.start_data.high)
+    pct_change = (compare_high - order.start_data.close) / order.start_data.close
     if pct_change <= MAX_STOP_LOSS_RATIO:
-        close_price = order.compare_data.high
+        close_price = compare_high
     elif order.start_data.close < order.compare_data.close:
         close_price = order.compare_data.close
     else:
