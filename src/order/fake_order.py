@@ -7,9 +7,11 @@
 import pandas as pd
 
 from order.enums import DirectionEnum, SideEnum
+from order.tools import get_stop_loss_price
 
 from schema.backtest import Backtest
 from schema.order_schema import OrderModel, OrderDataDict
+
 
 
 class FakeOrder(object):
@@ -27,6 +29,11 @@ class FakeOrder(object):
         fake_order = OrderModel(symbol=symbol, active=True, start_time=k['date'], start_data=order_data,
                                 open_price=k.close,
                                 interval=interval, compare_data=compare_data, side=side, leverage=leverage)
+        from strategy.tools import get_low_point
+        low_point = get_low_point(df, fake_order)
+        fake_order.low_point = low_point
+        stop_price = get_stop_loss_price(fake_order, k)
+        fake_order.stop_price = stop_price
         backtest.order_list.append(fake_order)
         return fake_order
 
@@ -35,8 +42,9 @@ class FakeOrder(object):
         stop = False
         close_price = None
         if direction == DirectionEnum.SHORT:
-            stop = current_k.high > order.compare_data.close
-            close_price = order.compare_data.close
+            if current_k.high >= order.stop_price:
+                stop = True
+                close_price = order.stop_price
         if direction == DirectionEnum.LONG:
             stop = current_k.low < order.compare_data.low
             close_price = order.compare_data.low

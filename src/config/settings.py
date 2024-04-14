@@ -26,15 +26,23 @@ PROXIES = {
 # 回测数据目录
 BACKTEST_DATA_DIR = os.getenv("BACKTEST_DATA_DIR", os.path.join(BASE_DIR, 'data', 'test'))
 # 获取极值区间长度
-MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 20))
+MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 8))
 # 获取极值区间长度
-MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 15))
+MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 8))
 # 每次交易最大k线数量
-TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 300))
+TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 200))
 # 开仓M头 头部到颈部跌幅
-M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.008))
+M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.012))
 # 判断为远距离高点时间, 单位 分钟
 DECLINE_HIGH_TIME = int(os.getenv("DECLINE_HIGH_TIME", 1440))
+# 最小交易k线
+MIN_TRADE_COUNT = int(os.getenv("MIN_TRADE_COUNT", 4))
+# 最后一个高点到当前k线数量
+NEAR_HIGH_K_COUNT = int(os.getenv("NEAR_HIGH_K_COUNT", 2))
+# 对比前高的数量
+COMPARE_HIGH_K_COUNT = int(os.getenv("COMPARE_HIGH_K_COUNT", 1))
+# 设置止损最大比例
+MAX_STOP_LOSS_RATIO = float(os.getenv("MAX_STOP_LOSS_RATIO", 0.008))
 
 
 DB_URL = os.getenv("DB_URL", f"sqlite:///{os.path.join(BASE_DIR, 'data', 'trade.db')}")

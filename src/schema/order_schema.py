@@ -53,6 +53,8 @@ class OrderModel(BaseModel):
     side: SideEnum
     leverage: int
     db_id: Optional[int] = None
+    low_point: Optional[OrderDataDict] = None
+    stop_price: Optional[float] = None
 
     def __str__(self):
         return f"{self.symbol=},{self.active=},{self.start_time=},{self.end_time}"

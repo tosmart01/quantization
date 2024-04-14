@@ -23,7 +23,7 @@ class MTestStrategy(MHeadStrategy):
     def entry_signal(self) -> OrderModel:
         ### 测试使用 =========
         # test_dates = [
-        #     pd.to_datetime('2024-02-24 16:00:00')
+        #     pd.to_datetime('2023-05-04 19:00:00')
         # ]
         # df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
         # if df.iloc[-1]['date'] not in test_dates:
@@ -69,7 +69,7 @@ class MTestStrategy(MHeadStrategy):
 
 if __name__ == '__main__':
     MTestStrategy(symbol="ETHUSDT",
-                  interval='15m',
+                  interval='30m',
                   backtest=True,
                   usdt="ALL",
                   leverage=3,

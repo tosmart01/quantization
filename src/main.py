@@ -10,10 +10,10 @@ if __name__ == '__main__':
     strategy = strategy_factory(name='m_head')
     scheduler = BlockingScheduler()
     model = strategy(symbol="ETHUSDT",
-             interval='15m',
+             interval='1h',
              backtest=False,
-             usdt="ALL",
-             leverage=10,
+             usdt='ALL',
+             leverage=6,
              order_kind=OrderKindEnum.BINANCE,
              )
     scheduler.add_job(model.execute, 'cron', hour='*',

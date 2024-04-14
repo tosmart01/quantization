@@ -5,15 +5,15 @@
 # @File: m_head.py
 # @Software: PyCharm
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 import pandas as pd
 
 from common.log import logger
 from common.tools import record_time
-from config.settings import M_DECLINE_PERCENT, CRON_INTERVAL
+from config.settings import M_DECLINE_PERCENT, CRON_INTERVAL, MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT
 from strategy.base import BaseStrategy
-from strategy.tools import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, find_low_index, \
-    check_high_value_in_range
+from strategy.tools import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
+    check_high_value_in_range, get_low_point
 from order.enums import DirectionEnum, SideEnum
 from schema.order_schema import OrderModel
 from exceptions.custom_exceptions import DateTimeError
@@ -33,7 +33,7 @@ class MHeadStrategy(BaseStrategy):
         last_k: pd.Series = df.iloc[-1]
         if last_k.close >= compare_high_k.high:
             return False, last_k
-        if last_k.name - last_high_k.name > 2:
+        if not (last_k.name - last_high_k.name <= NEAR_HIGH_K_COUNT):
             return False, last_k
         AM = recent_kline_avg_amplitude(df.loc[compare_high_k.name - 9: compare_high_k.name])
         low_value = df.loc[compare_high_k.name: last_k.name, 'low'].min()
@@ -42,7 +42,7 @@ class MHeadStrategy(BaseStrategy):
                              ]
         ge_last_high_k_list = []
         near_high_list = []
-        is_near_high_k = last_k.name - last_high_k.name <= 4
+        is_near_high_k = last_k.name - last_high_k.name <= NEAR_HIGH_K_COUNT
         if self.high_interval_check(last_k, last_high_k) and any(pct_change_verify):
             overtop = False
             mid = df.loc[last_high_k.name - 4: last_high_k.name, 'close'].mean()
@@ -57,7 +57,7 @@ class MHeadStrategy(BaseStrategy):
                 if k.high < mid:
                     verify = False
                 # 涨幅过大排除
-                if k.high > (compare_high_k.high + 1 * AM) and is_near_high_k:
+                if k.high > (compare_high_k.high + 1.5 * AM) and is_near_high_k:
                     overtop = True
                 if verify and k.high > compare_high_k.high:
                     ge_last_high_k_list.append(True)
@@ -68,6 +68,7 @@ class MHeadStrategy(BaseStrategy):
                 if last_k.close < last_k.open:
                     # 命中k线涨幅限制
                     if last_k.close - last_k.open <= 1.5 * AM:
+                        # if not last_k.close > compare_high_k.close:
                         # if self.check_near_volume(last_high_k, compare_high_k, df):
                         return (True, compare_high_k)
         return False, compare_high_k
@@ -76,31 +77,12 @@ class MHeadStrategy(BaseStrategy):
         high_index_list = find_high_index(df)
         if len(high_index_list) < 2:
             return False, df.iloc[1]
-        compare_high_list = [-i - 2 for i in range(len(high_index_list) - 1)][:2]
+        compare_high_list = [-i - 2 for i in range(len(high_index_list) - 1)][:COMPARE_HIGH_K_COUNT]
         for index in compare_high_list:
             verify, compare_high_k = self.find_enter_point(index, df, high_index_list)
             if verify:
                 return verify, compare_high_k
         return False, df.loc[0]
-
-    def get_low_point(self, df: pd.DataFrame, order: OrderModel) -> pd.Series | None:
-        low_index_list = find_low_index(df)
-        low_df = df.loc[low_index_list]
-        low_point_left = low_df.loc[low_df['date'] < order.compare_data.date]
-        low_point_right = low_df.loc[low_df['date'] > order.compare_data.date]
-        low_point = None
-        if not low_point_right.empty:
-            low_point = low_point_right.iloc[0]
-        elif not low_point_left.empty:
-            low_point = low_point_left.iloc[-1]
-        start_k = df.loc[df['date'] == order.start_data.date].iloc[-1]
-        if abs(start_k.name - low_point.name) <= 8:
-            min_index = df.loc[(df.date > order.compare_data.date) & (df.date < order.start_data.date), 'low'].idxmin()
-            min_point: pd.Series = df.loc[min_index]
-            if min_point.low <= low_point.low:
-                return min_point
-            return None
-        return low_point
 
     def entry_signal(self) -> OrderModel:
         df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
@@ -125,18 +107,17 @@ class MHeadStrategy(BaseStrategy):
             return
         checkout = False
         current_k: pd.Series = df.iloc[-1]
-        min_k_count = 8
+        min_k_count = MIN_TRADE_COUNT
         start_k = df.loc[df['date'] == order.start_data.date].iloc[0]
         AM = recent_kline_avg_amplitude(df.loc[current_k.name - 9: current_k.name])
-        low_point = self.get_low_point(df, order)
-        if low_point is not None:
+        if order.low_point is not None:
             # 近3跟k线接近前期低点，并且当前k线收阳线，平仓
             for row in df.loc[current_k.name - 2: current_k.name].itertuples():
-                if abs(row.low - low_point.low) <= AM * 0.10 and current_k.is_bull:
+                if abs(row.low - order.low_point.low) <= AM * 0.10 and current_k.is_bull:
                     checkout = True
                     break
                 # 如果已经低于前期低点，收阳线平仓
-                if row.low < low_point.low and current_k.is_bull:
+                if row.low < order.low_point.low and current_k.is_bull:
                     checkout = True
                     break
         if not checkout:

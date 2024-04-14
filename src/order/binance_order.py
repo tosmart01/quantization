@@ -18,6 +18,7 @@ from .order_mixin import OrderMixin
 
 from schema.order_schema import OrderModel
 from schema.backtest import Backtest
+from .tools import get_stop_loss_price
 
 
 class BinanceOrder(OrderMixin):
@@ -39,7 +40,7 @@ class BinanceOrder(OrderMixin):
     @error_email_notify(name="创建订单失败")
     def create_order(self, symbol: str, backtest: Backtest, df: pd.DataFrame, interval: str = '5m',
                      compare_k: pd.Series = None, side: SideEnum = None, usdt: float = None,
-                     leverage: int = 5) -> dict | OrderModel:
+                     leverage: int = 5) -> OrderModel:
         if backtest.open_back:
             return self.create_fake_order(symbol, backtest, df, interval, compare_k, side, leverage=leverage)
         market.set_leverage(symbol, leverage)
@@ -56,20 +57,21 @@ class BinanceOrder(OrderMixin):
                                            side=side.value,
                                            leverage=leverage,
                                            open_price=open_price)
+        order_schema: OrderModel = order_model.to_schema()
+        stop_price = get_stop_loss_price(order_schema, k)
+        from strategy.tools import get_low_point
+        low_point = get_low_point(df, order_schema)
         message = f"下单成功,{symbol=}, usdt={usdt / leverage:.2f}, {leverage=}, db_id={order_model.id}, {order=}"
         logger.info(message)
-        self.create_stop_loss(order_model)
-        send_trade_email(subject=f"下单成功,{symbol=}, usdt={usdt / leverage:.2f}", content=message, to_recipients=RECEIVE_EMAIL)
+        self.create_stop_loss(order_schema, stop_price)
+        Order.objects.update_obj(order_model, properties={"low_point": series_to_dict(low_point), "stop_price": stop_price})
+        send_trade_email(subject=f"下单成功,{symbol=}, usdt={usdt / leverage:.2f}", content=message,
+                         to_recipients=RECEIVE_EMAIL)
         return order
 
     @error_email_notify(name="创建止损失败")
-    def create_stop_loss(self, order: Order):
-        stop_price = order.compare_data.get("close")
-        if order.side == SideEnum.BUY.value:
-            side = SideEnum.SELL
-        else:
-            side = SideEnum.BUY
-        order_info = market.create_stop_order(symbol=order.symbol, side=side, stop_price=stop_price)
+    def create_stop_loss(self, order: OrderModel, stop_price: float):
+        order_info = market.create_stop_order(symbol=order.symbol, side=order.side.negation(), stop_price=stop_price)
         logger.info(f"{order.symbol=}止损设置成功, {order_info=}")
 
     @error_email_notify(name="平仓失败")
