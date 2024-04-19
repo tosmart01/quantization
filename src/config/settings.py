@@ -32,7 +32,7 @@ MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 8))
 # 每次交易最大k线数量
 TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 200))
 # 开仓M头 头部到颈部跌幅
-M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.012))
+M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.002))
 # 判断为远距离高点时间, 单位 分钟
 DECLINE_HIGH_TIME = int(os.getenv("DECLINE_HIGH_TIME", 1440))
 # 最小交易k线
@@ -42,8 +42,11 @@ NEAR_HIGH_K_COUNT = int(os.getenv("NEAR_HIGH_K_COUNT", 2))
 # 对比前高的数量
 COMPARE_HIGH_K_COUNT = int(os.getenv("COMPARE_HIGH_K_COUNT", 1))
 # 设置止损最大比例
-MAX_STOP_LOSS_RATIO = float(os.getenv("MAX_STOP_LOSS_RATIO", 0.008))
-
+MAX_STOP_LOSS_RATIO = float(os.getenv("MAX_STOP_LOSS_RATIO", 0.006))
+# 判断布林带开口比例
+OPENING_THRESHOLD = float(os.getenv("OPENING_THRESHOLD", 1.2))
+# 判断盘整区间末尾高点数量
+CONSOLIDATION_HIGH_COUNT = int(os.getenv("CONSOLIDATION_HIGH_COUNT", 5))
 
 DB_URL = os.getenv("DB_URL", f"sqlite:///{os.path.join(BASE_DIR, 'data', 'trade.db')}")
 # 是否测试

@@ -2,19 +2,46 @@
 # @Time : 2023/12/12 16:11
 # @Author : zhuo.wang
 # @File : tools.py
-import os
-import pickle
 import time
 from datetime import datetime
 
+import talib
 import pandas as pd
-import retry
 from loguru import logger
 from pandas import Timestamp
 
-from client.binance_client import client
-from schema.buy_info import InfoModel
-from config.settings import CACHE_DIR
+from config.settings import OPENING_THRESHOLD
+
+
+
+def fill_consecutive_true(arr: list[bool], offset=20, ratio=0.9) -> list[bool]:
+    if len(arr) < offset:
+        return arr
+    start = 0
+    while start + offset <= len(arr):
+        cut_arr = arr[start: start + offset]
+        if sum(cut_arr) / offset >= ratio:
+            arr[start: start + offset] = [True] * offset
+            start += offset
+        else:
+            start += 1
+    return arr
+
+
+def add_band_fields(df: pd.DataFrame) -> pd.DataFrame:
+    df['upper_band'], df['middle_band'], df['lower_band'] = talib.BBANDS(df['close'], timeperiod=20, nbdevup=2,
+                                                                         nbdevdn=2, matype=0)
+    df['band_width'] = df['upper_band'] - df['lower_band']
+    # 确定盘整区间
+    df['short_term_avg_width'] = df['band_width'].rolling(window=30).mean()
+    df['long_term_avg_width'] = df['band_width'].rolling(window=60).mean()
+    df['band_width_ma'] = df['band_width'].rolling(window=30).mean()
+    df['band_width_change'] = df['band_width'] / df['band_width_ma']
+    df['consolidation'] = ((df['short_term_avg_width'] < df['long_term_avg_width'] * 0.8)  # 短期宽度小于长期宽度的80%
+                           & (df['band_width_change'].abs() < OPENING_THRESHOLD) #布林带开口
+                           )
+    df['consolidation'] = fill_consecutive_true(df['consolidation'])
+    return df
 
 
 def format_df(data, symbol) -> pd.DataFrame:
@@ -33,69 +60,8 @@ def format_df(data, symbol) -> pd.DataFrame:
     df['is_bull'] = df['close'] > df['open']
     # 去掉最后一行
     #     df = df.iloc[:-1, ::]
+    df = add_band_fields(df)
     return df
-
-
-def get_color(value, is_end=False):
-    if not is_end:
-        return f'[{"red" if value >= 0 else "green"}]'
-    else:
-        return f'[/{"red" if value >= 0 else "green"}]'
-
-
-@retry.retry(tries=30, delay=0.2)
-def get_current_profit(code_list=None) -> tuple[float, dict, float]:
-    data = client.futures_account()
-    code_profit = {}
-    for code in code_list:
-        value = float([i for i in data['positions'] if i.get('symbol') == code][0]['unrealizedProfit'])
-        code_profit[code] = value
-    ratio = float(data['totalCrossUnPnl']) / float(data['totalMarginBalance'])
-    return float(data['totalCrossUnPnl']), code_profit, ratio
-
-
-def get_data(symbol: str):
-    cache_path = os.path.join(CACHE_DIR, f"{symbol}.pkl")
-    new_df = None
-    if os.path.exists(cache_path):
-        with open(cache_path, 'rb') as fp:
-            cache_dict = pickle.load(fp)
-        cache_df = cache_dict['df']
-        cache_time = pd.to_datetime(cache_dict['time'])
-        offset = (datetime.now() - cache_time).total_seconds() / 60
-        if offset <= 30:
-            data = client.futures_klines(symbol=symbol, limit=5, interval="15m", timeout=20)
-            df = format_df(data, 'btc')
-            new_df = pd.concat([cache_df, df], axis=0)
-            new_df = new_df.drop_duplicates(subset=['date'], keep='last').reset_index(drop=True)
-    if new_df is None:
-        data = client.futures_klines(symbol=symbol, limit=300, interval="15m", timeout=20)
-        new_df = format_df(data, 'btc')
-    with open(cache_path, 'wb') as fp:
-        pickle.dump({'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'df': new_df}, fp)
-    return new_df.iloc[-300:, ::].reset_index(drop=True)
-
-
-@retry.retry(tries=30, delay=0.2)
-def get_diff(A, B, div=1):
-    btc_df = get_data(A)
-    eth_df = get_data(B)
-    normalized_difference = (btc_df['close'] * div - eth_df['close']) / eth_df['close']
-    return normalized_difference
-
-
-def get_rate(buy_info: InfoModel, current_num: float) -> str:
-    if buy_info.win_info:
-        target_price = buy_info.win_info.eq_number
-        total_difference = abs(target_price - buy_info.first_num)
-        current_length = abs(current_num - target_price)
-        rate = abs(1 - current_length / total_difference)
-        if buy_info.first_num <= current_num <= target_price:
-            rate = rate
-        else:
-            rate = -rate
-        return f"{rate:.2%}"
-    return ""
 
 
 def record_time(func):
@@ -110,9 +76,14 @@ def record_time(func):
     return wrapper
 
 
-def series_to_dict(series: pd.Series | dict) -> dict:
+def series_to_dict(series: pd.Series | dict, fields=None) -> dict:
+    from schema.order_schema import OrderDataDict
     res: dict = series.to_dict() if isinstance(series, pd.Series) else series.dict()
+    fields = list(OrderDataDict.model_fields.keys()) if not fields else fields
+    data = {}
     for key, value in res.items():
         if isinstance(value, (Timestamp, datetime)):
             res[key] = value.strftime("%Y-%m-%d %H:%M:%S")
+        if key in fields:
+            data[key] = value
     return res

@@ -11,7 +11,7 @@ from retry import retry
 from schema.backtest import Backtest
 from config.settings import BACKTEST_DATA_DIR, TRADE_MAX_INTERVAL
 from client.binance_client import client
-from common.tools import format_df
+from common.tools import format_df, add_band_fields
 from exceptions.custom_exceptions import TestEndingError, DataDeficiencyError
 
 
@@ -22,7 +22,7 @@ class DataModule:
         data = client.get_klines(symbol=symbol, interval=interval, limit=limit)
         return data
 
-    def get_klines(self, symbol: str, interval: str = '5m', limit: int = 500,
+    def get_klines(self, symbol: str, interval: str = '5m', limit: int = TRADE_MAX_INTERVAL,
                    backtest_info: Backtest = None) -> pd.DataFrame:
 
         if backtest_info.open_back:
@@ -35,11 +35,8 @@ class DataModule:
         df = backtest_info.df.loc[backtest_info.start_offset: backtest_info.end_offset].reset_index(drop=True)
         if df.empty or backtest_info.end_offset > len(backtest_info.df):
             raise TestEndingError()
-        if backtest_info.end_offset - backtest_info.start_offset < TRADE_MAX_INTERVAL:
-            backtest_info.end_offset += 1
-        else:
-            backtest_info.start_offset += 1
-            backtest_info.end_offset += 1
+        backtest_info.start_offset += 1
+        backtest_info.end_offset += 1
         return df
 
     def load_fake_klines(self, symbol: str) -> pd.DataFrame:
@@ -49,6 +46,7 @@ class DataModule:
                 df = pd.read_pickle(os.path.join(BACKTEST_DATA_DIR, path))
                 df['tr'] = df['high'] - df['low']
                 df['is_bull'] = df['close'] > df['open']
-                return df.loc[(df['date'] >= '2023-05-01 00:00:00') & (df['date'] < '2023-05-10 23:30:00') ].reset_index(drop=True)
-                # return df.reset_index(drop=True)
+                df = df.loc[(df['date'] >= '2022-05-18 00:00:00') & (df['date'] < '2022-06-06 23:30:00') ].reset_index(drop=True)
+                df = add_band_fields(df)
+                return df.reset_index(drop=True)
         raise DataDeficiencyError()

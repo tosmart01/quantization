@@ -5,10 +5,9 @@
 # @File: tools.py
 # @Software: PyCharm
 import pandas as pd
-from pandas import Timestamp
 from scipy.signal import find_peaks
 
-from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, DECLINE_HIGH_TIME, MIN_TRADE_COUNT, M_DECLINE_PERCENT
+from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, MIN_TRADE_COUNT
 from schema.order_schema import OrderModel
 
 

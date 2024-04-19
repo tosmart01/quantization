@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from config.settings import MAX_VALUE_PERIOD, DECLINE_HIGH_TIME
+from config.settings import MAX_VALUE_PERIOD, DECLINE_HIGH_TIME, TRADE_MAX_INTERVAL
 from exceptions.custom_exceptions import DataDeficiencyError
 from order import factory_order_model
 from schema.backtest import Backtest
@@ -30,16 +30,10 @@ class BaseStrategy(ABC):
         self.leverage = leverage
         self.usdt = usdt
 
-    def high_interval_check(self, k: pd.Series, compare_k: pd.Series) -> bool:
-        compare_k_count = DECLINE_HIGH_TIME / 15
-        k_count = k.name - compare_k.name
-        if k_count >= compare_k_count or k_count <=4:
-            return True
-        else:
-            return False
-
     @property
     def buy_usdt(self):
+        if self.backtest_info.open_back:
+            return 100
         if self.usdt == 'ALL':
             return round(self.order_module.get_all_money() * 0.85, 2)
         else:
@@ -53,7 +47,7 @@ class BaseStrategy(ABC):
             if test_df.empty:
                 raise DataDeficiencyError()
             start_offset = 0
-            end_offset = MAX_VALUE_PERIOD + 2
+            end_offset = TRADE_MAX_INTERVAL - 1
             return Backtest(symbol=self.symbol,
                             df=test_df,
                             open_back=True,
