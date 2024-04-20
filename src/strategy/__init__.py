@@ -5,9 +5,12 @@
 # @File: __init__.py.py
 # @Software: PyCharm
 import warnings
-warnings.filterwarnings("ignore")
-from strategy.m_head import MHeadStrategy, BaseStrategy
+
+
 from exceptions.custom_exceptions import UnsupportedStrategyError
+from strategy.m_head import MHeadStrategy, BaseStrategy
+
+warnings.filterwarnings("ignore")
 
 
 def strategy_factory(name: str) -> BaseStrategy.__class__:

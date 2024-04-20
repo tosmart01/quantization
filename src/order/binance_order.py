@@ -58,7 +58,7 @@ class BinanceOrder(OrderMixin):
                                            leverage=leverage,
                                            open_price=open_price)
         order_schema: OrderModel = order_model.to_schema()
-        stop_price = get_stop_loss_price(order_schema, k)
+        stop_price = get_stop_loss_price(order_schema, k, df)
         from strategy.tools import get_low_point
         low_point = get_low_point(df, order_schema)
         message = f"下单成功,{symbol=}, usdt={usdt / leverage:.2f}, {leverage=}, db_id={order_model.id}, {order=}"

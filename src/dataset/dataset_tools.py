@@ -46,7 +46,7 @@ class DataModule:
                 df = pd.read_pickle(os.path.join(BACKTEST_DATA_DIR, path))
                 df['tr'] = df['high'] - df['low']
                 df['is_bull'] = df['close'] > df['open']
-                df = df.loc[(df['date'] >= '2022-05-18 00:00:00') & (df['date'] < '2022-06-06 23:30:00') ].reset_index(drop=True)
+                # df = df.loc[(df['date'] >= '2023-04-18 00:00:00') & (df['date'] < '2023-06-06 23:30:00') ].reset_index(drop=True)
                 df = add_band_fields(df)
                 return df.reset_index(drop=True)
         raise DataDeficiencyError()

@@ -10,10 +10,11 @@ import pandas as pd
 
 from common.log import logger
 from common.tools import record_time
-from config.settings import M_DECLINE_PERCENT, CRON_INTERVAL, MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT
+from config.settings import CRON_INTERVAL, MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT, \
+    CONSOLIDATION_HIGH_COUNT
 from strategy.base import BaseStrategy
 from strategy.tools import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
-    check_high_value_in_range, get_low_point
+    check_high_value_in_range, adapt_by_percent
 from order.enums import DirectionEnum, SideEnum
 from schema.order_schema import OrderModel
 from exceptions.custom_exceptions import DateTimeError
@@ -26,6 +27,19 @@ class MHeadStrategy(BaseStrategy):
         compare_volume = df.loc[compare_k.name - 1: compare_k.name + 1, 'volume'].mean()
         return current_volume <= compare_volume
 
+    def check_consolidation(self, high_index_list: list[int], df: pd.DataFrame, last_high_k: pd.Series) -> bool:
+        k = df.iloc[-1]
+        if k.consolidation:
+            start = df.loc[(df.date<=k.date) & (df.consolidation==False)].iloc[-1].name + 1
+            band_list = [i for i in high_index_list if i >= start]
+            if len(band_list) >= CONSOLIDATION_HIGH_COUNT:
+                return False
+            elif len(band_list) == 1 and band_list[-1] == last_high_k.name:
+                return False
+            else:
+                return True
+        return False
+
     def find_enter_point(self, compare_high_index: int, df: pd.DataFrame, high_index_list: list) -> tuple[
         bool, pd.Series]:
         compare_high_k = df.loc[high_index_list[compare_high_index]]
@@ -33,17 +47,21 @@ class MHeadStrategy(BaseStrategy):
         last_k: pd.Series = df.iloc[-1]
         if last_k.close >= compare_high_k.high:
             return False, last_k
+        # 当前k线距离前高太远排除
         if not (last_k.name - last_high_k.name <= NEAR_HIGH_K_COUNT):
+            return False, last_k
+        if self.check_consolidation(high_index_list, df, last_high_k):
             return False, last_k
         AM = recent_kline_avg_amplitude(df.loc[compare_high_k.name - 9: compare_high_k.name])
         low_value = df.loc[compare_high_k.name: last_k.name, 'low'].min()
-        pct_change_verify = [(last_k.high - low_value) / low_value > M_DECLINE_PERCENT,
-                             (last_high_k.high - low_value) / low_value > M_DECLINE_PERCENT
+        decline_percent = adapt_by_percent(df)
+        pct_change_verify = [(last_k.high - low_value) / low_value > decline_percent,
+                             (last_high_k.high - low_value) / low_value > decline_percent
                              ]
         ge_last_high_k_list = []
         near_high_list = []
         is_near_high_k = last_k.name - last_high_k.name <= NEAR_HIGH_K_COUNT
-        if self.high_interval_check(last_k, last_high_k) and any(pct_change_verify):
+        if any(pct_change_verify):
             overtop = False
             mid = df.loc[last_high_k.name - 4: last_high_k.name, 'close'].mean()
             for k in df.loc[last_high_k.name: last_k.name].itertuples():
@@ -68,8 +86,11 @@ class MHeadStrategy(BaseStrategy):
                 if last_k.close < last_k.open:
                     # 命中k线涨幅限制
                     if last_k.close - last_k.open <= 1.5 * AM:
-                        # if not last_k.close > compare_high_k.close:
-                        # if self.check_near_volume(last_high_k, compare_high_k, df):
+                        # if len(high_index_list) >=3:
+                            # tr = df.loc[high_index_list[-3]: high_index_list[-1], 'high'].max() / df.loc[high_index_list[-3]: high_index_list[-1], 'low'].min() - 1
+                            # tr = abs(df.loc[high_index_list[-3], 'high'] / df.loc[high_index_list[-1], 'high'] - 1)
+                            # if tr >= 0.032:
+                            # if not self.check_consolidation(high_index_list, df, last_high_k):
                         return (True, compare_high_k)
         return False, compare_high_k
 
@@ -110,7 +131,8 @@ class MHeadStrategy(BaseStrategy):
         min_k_count = MIN_TRADE_COUNT
         start_k = df.loc[df['date'] == order.start_data.date].iloc[0]
         AM = recent_kline_avg_amplitude(df.loc[current_k.name - 9: current_k.name])
-        if order.low_point is not None:
+        trade_days = current_k.name - start_k.name >= min_k_count - 1
+        if order.low_point is not None and trade_days:
             # 近3跟k线接近前期低点，并且当前k线收阳线，平仓
             for row in df.loc[current_k.name - 2: current_k.name].itertuples():
                 if abs(row.low - order.low_point.low) <= AM * 0.10 and current_k.is_bull:
@@ -125,7 +147,7 @@ class MHeadStrategy(BaseStrategy):
             for row in df.loc[current_k.name - 2: current_k.name].itertuples():
                 if row.close - row.open > 0:
                     count += 1
-            if count >= 3 and current_k.name - start_k.name >= min_k_count:
+            if count >= 3 and trade_days:
                 checkout = True
         if checkout or current_k.name - start_k.name >= 200:
             self.order_module.close_order(self.backtest_info, order, df)

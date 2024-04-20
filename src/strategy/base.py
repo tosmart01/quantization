@@ -6,9 +6,8 @@
 # @Software: PyCharm
 from abc import ABC, abstractmethod
 
-import pandas as pd
-
-from config.settings import MAX_VALUE_PERIOD, DECLINE_HIGH_TIME, TRADE_MAX_INTERVAL
+from common.log import logger
+from config.settings import TRADE_MAX_INTERVAL
 from exceptions.custom_exceptions import DataDeficiencyError
 from order import factory_order_model
 from schema.backtest import Backtest
@@ -34,10 +33,15 @@ class BaseStrategy(ABC):
     def buy_usdt(self):
         if self.backtest_info.open_back:
             return 100
+        all_money = self.order_module.get_all_money()
         if self.usdt == 'ALL':
-            return round(self.order_module.get_all_money() * 0.85, 2)
+            return round(all_money * 0.85, 2)
         else:
-            return self.usdt
+            if self.usdt > all_money:
+                logger.warning(f"{self.symbol=} 下单金额超过账户余额，改为使用账户余额85%下单")
+                return round(all_money * 0.85, 2)
+            else:
+                return self.usdt
 
     def backtest_init(self, backtest, back_start_date, back_end_date) -> Backtest:
         if backtest:

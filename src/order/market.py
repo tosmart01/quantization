@@ -48,7 +48,7 @@ class MarketEngine:
             )
         except Exception as e:
             leverage = client.futures_change_leverage(
-                symbol=symbol, leverage=20
+                symbol=symbol, leverage=5
             )
 
     def get_precision(self, symbol: str):

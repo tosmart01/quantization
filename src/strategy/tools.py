@@ -7,8 +7,13 @@
 import pandas as pd
 from scipy.signal import find_peaks
 
-from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, MIN_TRADE_COUNT
+from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, MIN_TRADE_COUNT, M_DECLINE_PERCENT
 from schema.order_schema import OrderModel
+
+
+
+def adapt_by_percent(df: pd.DataFrame):
+    return (df.tr.mean() / df.close.mean()) * M_DECLINE_PERCENT
 
 
 def recent_kline_avg_amplitude(data: pd.DataFrame) -> float:

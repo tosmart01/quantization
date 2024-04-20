@@ -31,8 +31,8 @@ MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 8))
 MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 8))
 # 每次交易最大k线数量
 TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 200))
-# 开仓M头 头部到颈部跌幅
-M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 0.002))
+# 开仓M头 头部到颈部跌幅比例
+M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 2.7))
 # 判断为远距离高点时间, 单位 分钟
 DECLINE_HIGH_TIME = int(os.getenv("DECLINE_HIGH_TIME", 1440))
 # 最小交易k线
@@ -42,7 +42,7 @@ NEAR_HIGH_K_COUNT = int(os.getenv("NEAR_HIGH_K_COUNT", 2))
 # 对比前高的数量
 COMPARE_HIGH_K_COUNT = int(os.getenv("COMPARE_HIGH_K_COUNT", 1))
 # 设置止损最大比例
-MAX_STOP_LOSS_RATIO = float(os.getenv("MAX_STOP_LOSS_RATIO", 0.006))
+MAX_STOP_LOSS_RATIO = float(os.getenv("MAX_STOP_LOSS_RATIO", 0.4))
 # 判断布林带开口比例
 OPENING_THRESHOLD = float(os.getenv("OPENING_THRESHOLD", 1.2))
 # 判断盘整区间末尾高点数量
@@ -61,6 +61,7 @@ if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR)
 
 CRON_INTERVAL = {
+    "1h": "59",
     "15m": '14,29,44,59',
     "5m": '4,9,14,19,24,29,34,39,44,49,54,59'
 }

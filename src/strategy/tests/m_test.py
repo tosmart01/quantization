@@ -70,8 +70,8 @@ class MTestStrategy(MHeadStrategy):
 if __name__ == '__main__':
     MTestStrategy(symbol="ETHUSDT",
                   interval='1h',
-                  backtest=True,
-                  usdt="ALL",
+                  backtest=False,
+                  usdt=20,
                   leverage=3,
                   order_kind=OrderKindEnum.BINANCE,
                   ).execute()

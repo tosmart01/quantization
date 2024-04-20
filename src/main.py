@@ -3,20 +3,23 @@
 # @Author : zhuo.wang
 # @File : main.py
 from apscheduler.schedulers.background import BlockingScheduler
+
+from config.settings import CRON_INTERVAL
 from strategy import strategy_factory
 from order.enums import OrderKindEnum
 
 if __name__ == '__main__':
     strategy = strategy_factory(name='m_head')
     scheduler = BlockingScheduler()
+    interval = '1h'
     model = strategy(symbol="ETHUSDT",
-             interval='1h',
-             backtest=False,
-             usdt='ALL',
-             leverage=6,
-             order_kind=OrderKindEnum.BINANCE,
-             )
+                     interval=interval,
+                     backtest=False,
+                     usdt=500,
+                     leverage=7,
+                     order_kind=OrderKindEnum.BINANCE,
+                     )
     scheduler.add_job(model.execute, 'cron', hour='*',
-                      minute='14,29,44,59', second='30',
+                      minute=CRON_INTERVAL[interval], second='40',
                       )
     scheduler.start()
