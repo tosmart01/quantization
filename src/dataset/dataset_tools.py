@@ -39,14 +39,10 @@ class DataModule:
         backtest_info.end_offset += 1
         return df
 
-    def load_fake_klines(self, symbol: str) -> pd.DataFrame:
-        file_list = os.listdir(BACKTEST_DATA_DIR)
-        for path in file_list:
-            if symbol.lower() in path.lower():
-                df = pd.read_pickle(os.path.join(BACKTEST_DATA_DIR, path))
-                df['tr'] = df['high'] - df['low']
-                df['is_bull'] = df['close'] > df['open']
-                # df = df.loc[(df['date'] >= '2023-04-18 00:00:00') & (df['date'] < '2023-06-06 23:30:00') ].reset_index(drop=True)
-                df = add_band_fields(df)
-                return df.reset_index(drop=True)
-        raise DataDeficiencyError()
+    def load_fake_klines(self, backtest_path: str) -> pd.DataFrame:
+        df = pd.read_pickle(backtest_path)
+        df['tr'] = df['high'] - df['low']
+        df['is_bull'] = df['close'] > df['open']
+        # df = df.loc[(df['date'] >= '2023-04-18 00:00:00') & (df['date'] < '2023-06-06 23:30:00') ].reset_index(drop=True)
+        df = add_band_fields(df)
+        return df.reset_index(drop=True)

@@ -15,8 +15,8 @@ if __name__ == '__main__':
     model = strategy(symbol="ETHUSDT",
                      interval=interval,
                      backtest=False,
-                     usdt=500,
-                     leverage=7,
+                     usdt=1200,
+                     leverage=5,
                      order_kind=OrderKindEnum.BINANCE,
                      )
     scheduler.add_job(model.execute, 'cron', hour='*',

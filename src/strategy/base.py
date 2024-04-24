@@ -19,13 +19,13 @@ class BaseStrategy(ABC):
     def __init__(self, symbol: str, interval: str = '15m', backtest: bool = False,
                  back_start_date: str = None,
                  back_end_date: str = None, leverage: int = 5, order_kind: OrderKindEnum = None,
-                 usdt: float | str = None):
+                 usdt: float | str = None, backtest_path: str=""):
         from dataset.dataset_tools import DataModule
         self.data_module = DataModule()
         self.symbol = symbol
         self.interval = interval
         self.order_module = factory_order_model(order_kind)
-        self.backtest_info = self.backtest_init(backtest, back_start_date, back_end_date)
+        self.backtest_info = self.backtest_init(backtest, back_start_date, back_end_date, backtest_path)
         self.leverage = leverage
         self.usdt = usdt
 
@@ -43,9 +43,9 @@ class BaseStrategy(ABC):
             else:
                 return self.usdt
 
-    def backtest_init(self, backtest, back_start_date, back_end_date) -> Backtest:
+    def backtest_init(self, backtest, back_start_date, back_end_date, backtest_path: str) -> Backtest:
         if backtest:
-            test_df = self.data_module.load_fake_klines(self.symbol)
+            test_df = self.data_module.load_fake_klines(backtest_path)
             if back_start_date and back_end_date:
                 test_df = test_df.loc[(test_df['date'] >= back_start_date) & (test_df['date'] <= back_end_date)]
             if test_df.empty:
