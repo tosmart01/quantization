@@ -104,7 +104,7 @@
    result = pd.DataFrame(res)
    result['start_time'] = result['start_time'].astype('datetime64')
    result['end_time'] = result['end_time'].astype('datetime64')
-   result['profit'] = (result['open_price'] - result['close_price']) / result['close_price']
+   result['profit'] = (result['open_price'] - result['close_price']) / result['open_price']
    result.profit = result.profit - 0.001
    result['profit_sum'] = result.profit.cumsum()
    note = """
