@@ -87,3 +87,13 @@ def series_to_dict(series: pd.Series | dict, fields=None) -> dict:
         if key in fields:
             data[key] = value
     return res
+
+
+def round_float_precision(num1, num2):
+    # 获取num1的小数位数
+    if isinstance(num1, float):
+        precision = len(str(num1).split('.')[1])
+        # 将num2的小数位数round成precision
+        rounded_num2 = round(num2, precision)
+        return rounded_num2
+    return int(num2)

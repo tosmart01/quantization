@@ -33,7 +33,7 @@ class FakeOrder(object):
         stop_price = get_stop_loss_price(fake_order, k, df)
         fake_order.stop_price = stop_price
         low_point = get_low_point(df, fake_order)
-        fake_order.low_point = low_point
+        fake_order.low_point = OrderDataDict(**low_point.to_dict())
         backtest.order_list.append(fake_order)
         return fake_order
 

@@ -13,6 +13,7 @@ from schema.order_schema import OrderModel
 
 
 def adapt_by_percent(df: pd.DataFrame):
+    # return (df.tail(40).tr.mean() / df.tail(40).close.mean()) * M_DECLINE_PERCENT
     return (df.tr.mean() / df.close.mean()) * M_DECLINE_PERCENT
 
 
@@ -141,3 +142,12 @@ def get_low_point(df: pd.DataFrame, order: OrderModel) -> pd.Series | None:
     # if (order.compare_data.high - low_point.low) / low_point.low > M_DECLINE_PERCENT * 2:
     #     low_point.low = order.start_data.close * (1 - M_DECLINE_PERCENT * 1.5)
     return low_point
+
+
+def get_entry_signal_low_point(df: pd.DataFrame, compare_k: pd.Series) -> pd.Series:
+    low_index_list = find_low_index(df)
+    low_df = df.loc[low_index_list]
+    low_point_left = low_df.loc[low_df['date'] < compare_k.date]
+    if not low_point_left.empty:
+        left_low_point = low_point_left.iloc[-1]
+        return left_low_point
