@@ -71,8 +71,6 @@ if __name__ == '__main__':
     MTestStrategy(symbol="ETHUSDT",
                   interval='1h',
                   backtest=True,
-                  usdt=20,
-                  leverage=3,
                   order_kind=OrderKindEnum.BINANCE,
                   backtest_path=r"E:\work_dir\workFile\quantization\src\data\test\ethusdt回测1h.pkl"
                   ).execute()

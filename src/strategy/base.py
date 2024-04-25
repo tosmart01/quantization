@@ -12,36 +12,41 @@ from exceptions.custom_exceptions import DataDeficiencyError
 from order import factory_order_model
 from schema.backtest import Backtest
 from order.enums import OrderKindEnum
+from config.order_config import order_config
 
 
 class BaseStrategy(ABC):
 
     def __init__(self, symbol: str, interval: str = '15m', backtest: bool = False,
-                 back_start_date: str = None,
-                 back_end_date: str = None, leverage: int = 5, order_kind: OrderKindEnum = None,
-                 usdt: float | str = None, backtest_path: str=""):
+                 back_start_date: str = None, back_end_date: str = None, order_kind: OrderKindEnum = None,
+                 backtest_path: str=""):
         from dataset.dataset_tools import DataModule
         self.data_module = DataModule()
         self.symbol = symbol
         self.interval = interval
         self.order_module = factory_order_model(order_kind)
         self.backtest_info = self.backtest_init(backtest, back_start_date, back_end_date, backtest_path)
-        self.leverage = leverage
-        self.usdt = usdt
+
+    @property
+    def leverage(self):
+        return order_config.leverage
 
     @property
     def buy_usdt(self):
         if self.backtest_info.open_back:
             return 100
         all_money = self.order_module.get_all_money()
-        if self.usdt == 'ALL':
+        if order_config.buy_usdt == 'ALL':
             return round(all_money * 0.85, 2)
+        elif "%" in order_config.buy_usdt:
+            usdt = float(order_config.buy_usdt.split('%')[0]) / 100
+            return round(usdt * all_money, 2)
         else:
-            if self.usdt > all_money:
+            if order_config.buy_usdt > all_money:
                 logger.warning(f"{self.symbol=} 下单金额超过账户余额，改为使用账户余额85%下单")
                 return round(all_money * 0.85, 2)
             else:
-                return self.usdt
+                return order_config.buy_usdt
 
     def backtest_init(self, backtest, back_start_date, back_end_date, backtest_path: str) -> Backtest:
         if backtest:

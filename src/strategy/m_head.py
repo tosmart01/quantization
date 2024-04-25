@@ -166,12 +166,12 @@ class MHeadStrategy(BaseStrategy):
             raise DateTimeError()
         while True:
             period = 60 - datetime.now().second
-            if period >= 5:
-                time.sleep(0.2)
+            if period >= 3:
+                time.sleep(0.05)
             else:
                 break
         try:
-            logger.info(f"symbol={self.symbol}开始执行")
+            logger.info(f"symbol={self.symbol}开始执行, buy_usdt={self.buy_usdt}, leverage={self.leverage}")
             order = self.order_module.get_open_order(self.symbol, self.backtest_info)
             if order:
                 self.exit_signal(order)
