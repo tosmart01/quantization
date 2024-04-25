@@ -32,7 +32,7 @@
 2. 运行 
    - 实盘运行
 
-   ```
+   ```python
     # 设置策略
     strategy = strategy_factory(name='m_head')
     scheduler = BlockingScheduler()
@@ -73,7 +73,7 @@
          743 2024-04-01 07:00:00  70969.99  71366.00  ...  1514.230030    0.436818  BTC/USDT
      ```
    - 修改 [历史数据路径](./src/strategy/tests/m_test.py)
-   ```
+   ```python
        MTestStrategy(symbol="ETHUSDT",
                      interval='1h',
                      usdt=20,
@@ -84,7 +84,7 @@
                      ).execute()
    ```
    - 运行回测
-   ```
+   ```shell
    python /src/strategy/tests/m_test.py
    # 结果输出路径为 /src/strategy/tests/{symbol}_backdump.json
    ```
@@ -93,7 +93,7 @@
    ![](./asset/img/统计信息.png)
    ![](./asset/img/回测折线图.png) 
 
-   ```
+   ```python
    import json
    import pandas as pd
    data = json.load(open("symbol_backdump.json"))
