@@ -15,13 +15,13 @@
 
 1. 克隆仓库到本地：
 
-   ```
+   ```shell
    git clone git@github.com:tosmart01/quantization.git
    ```
 
 2. 安装所需依赖：
 
-   ```
+   ```shell
    pip install -r requirements.txt
    ```
 
@@ -29,9 +29,10 @@
 
 1. 配置 `config.settings` 文件，设置 `BINANCE_KEY`, `BINANCE_SECRET` 和其他环境变量。
 
-2. 运行 
+2. 运行
+   
    - 实盘运行
-
+     <br><br>
    ```python
     # 设置策略
     strategy = strategy_factory(name='m_head')
@@ -50,6 +51,7 @@
                       )
     scheduler.start()
    ```
+   
    ```shell
    # 运行实盘
    python main.py
@@ -57,7 +59,8 @@
    
    - 回测
       - [到币安官网下载历史数据](https://data.binance.vision/?prefix=data/spot/monthly/klines/ETHUSDT/)
-      - [将币安csv数据修改为pandas pkl 格式](./src/scripts/export.py)
+      - [将币安csv数据修改为pandas pkl 格式](./src/scripts/export.py)<br>
+     <br><br>
       ```
                date                 open      high  ...       volume  pct_change    symbol
          0   2021-03-01 08:00:00  45134.11  46571.30  ...  4899.574833         NaN  BTC/USDT
@@ -72,7 +75,9 @@
          742 2024-04-01 06:00:00  70855.99  71070.93  ...   735.395990    0.160890  BTC/USDT
          743 2024-04-01 07:00:00  70969.99  71366.00  ...  1514.230030    0.436818  BTC/USDT
      ```
-   - 修改 [历史数据路径](./src/strategy/tests/m_test.py)
+      
+   - 修改 [历史数据路径](./src/strategy/tests/m_test.py)<br>
+     
    ```python
        MTestStrategy(symbol="ETHUSDT",
                      interval='1h',
@@ -83,15 +88,19 @@
                      backtest_path="币安下载数据导出成pkl的路径", 
                      ).execute()
    ```
+   
    - 运行回测
+     
    ```shell
    python /src/strategy/tests/m_test.py
    # 结果输出路径为 /src/strategy/tests/{symbol}_backdump.json
    ```
+   
    - 回测结果统计 
    
    ![](./asset/img/统计信息.png)
    ![](./asset/img/回测折线图.png) 
+
 
    ```python
    import json
