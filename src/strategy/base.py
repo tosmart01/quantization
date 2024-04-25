@@ -38,7 +38,7 @@ class BaseStrategy(ABC):
         all_money = self.order_module.get_all_money()
         if order_config.buy_usdt == 'ALL':
             return round(all_money * 0.85, 2)
-        elif "%" in order_config.buy_usdt:
+        elif "%" in str(order_config.buy_usdt):
             usdt = float(order_config.buy_usdt.split('%')[0]) / 100
             return round(usdt * all_money, 2)
         else:
