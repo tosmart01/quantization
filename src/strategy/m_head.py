@@ -171,7 +171,7 @@ class MHeadStrategy(BaseStrategy):
             else:
                 break
         try:
-            logger.info(f"symbol={self.symbol}开始执行, buy_usdt={self.buy_usdt}, leverage={self.leverage}")
+            logger.info(f"symbol={self.symbol}开始执行,leverage={self.leverage}")
             order = self.order_module.get_open_order(self.symbol, self.backtest_info)
             if order:
                 self.exit_signal(order)
