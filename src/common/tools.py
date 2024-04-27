@@ -10,8 +10,7 @@ import pandas as pd
 from loguru import logger
 from pandas import Timestamp
 
-from config.settings import OPENING_THRESHOLD
-
+from config.settings import OPENING_THRESHOLD, ASTRINGENCY_THRESHOLD
 
 
 def fill_consecutive_true(arr: list[bool], offset=20, ratio=0.9) -> list[bool]:
@@ -37,7 +36,7 @@ def add_band_fields(df: pd.DataFrame) -> pd.DataFrame:
     df['long_term_avg_width'] = df['band_width'].rolling(window=60).mean()
     df['band_width_ma'] = df['band_width'].rolling(window=30).mean()
     df['band_width_change'] = df['band_width'] / df['band_width_ma']
-    df['consolidation'] = ((df['short_term_avg_width'] < df['long_term_avg_width'] * 0.8)  # 短期宽度小于长期宽度的80%
+    df['consolidation'] = ((df['short_term_avg_width'] < df['long_term_avg_width'] * ASTRINGENCY_THRESHOLD)  # 短期宽度小于长期宽度的80%
                            & (df['band_width_change'].abs() < OPENING_THRESHOLD) #布林带开口
                            )
     df['consolidation'] = fill_consecutive_true(df['consolidation'])

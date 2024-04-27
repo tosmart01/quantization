@@ -46,7 +46,7 @@ class MHeadStrategy(BaseStrategy):
         decline_percent = adapt_by_percent(df)
         left_low_point = get_entry_signal_low_point(df, compare_high_k)
         if left_low_point is not None:
-            if last_k.name - left_low_point.name >= 20:
+            if last_k.name - left_low_point.name >= 23:
                 low_value = min(left_low_point.low, low_value)
         pct_change_verify = (max(last_k.high, last_high_k.high) - low_value) / low_value > decline_percent
         return pct_change_verify
@@ -61,8 +61,8 @@ class MHeadStrategy(BaseStrategy):
         # 当前k线距离前高太远排除
         if not (last_k.name - last_high_k.name <= NEAR_HIGH_K_COUNT):
             return False, last_k
-        if self.check_consolidation(high_index_list, df, last_high_k):
-            return False, last_k
+        # if self.check_consolidation(high_index_list, df, last_high_k):
+        #     return False, last_k
         AM = recent_kline_avg_amplitude(df.loc[compare_high_k.name - 9: compare_high_k.name])
         ge_last_high_k_list = []
         near_high_list = []
