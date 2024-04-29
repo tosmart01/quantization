@@ -33,10 +33,8 @@ MIN_VALUE_PERIOD = int(os.getenv("MIN_VALUE_PERIOD", 8))
 TRADE_MAX_INTERVAL = int(os.getenv("TRADE_MAX_INTERVAL", 200))
 # 开仓M头 头部到颈部跌幅比例
 M_DECLINE_PERCENT = float(os.getenv("M_DECLINE_PERCENT", 2.7))
-# 判断为远距离高点时间, 单位 分钟
-DECLINE_HIGH_TIME = int(os.getenv("DECLINE_HIGH_TIME", 1440))
 # 最小交易k线
-MIN_TRADE_COUNT = int(os.getenv("MIN_TRADE_COUNT", 4))
+MIN_TRADE_COUNT = int(os.getenv("MIN_TRADE_COUNT", 8))
 # 最后一个高点到当前k线数量
 NEAR_HIGH_K_COUNT = int(os.getenv("NEAR_HIGH_K_COUNT", 2))
 # 对比前高的数量
