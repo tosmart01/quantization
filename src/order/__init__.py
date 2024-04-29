@@ -1,6 +1,6 @@
 # -- coding: utf-8 --
 # @Time : 2023/12/12 18:05
-# @Author : zhuo.wang
+# @Author : pinbar
 # @File : __init__.py.py
 from order.binance_order import BinanceOrder
 from order.enums import OrderKindEnum
