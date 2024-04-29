@@ -61,9 +61,9 @@ class BinanceOrder(OrderMixin):
         stop_price = get_stop_loss_price(order_schema, k, df)
         from strategy.strategy_helper import get_low_point
         low_point = get_low_point(df, order_schema)
-        message = f"下单成功,{symbol=}, usdt={usdt / leverage:.2f}, {leverage=}, db_id={order_model.id}, {order=}"
-        logger.info(message)
         self.create_stop_loss(order_schema, stop_price)
+        message = f"下单成功,{symbol=}, usdt={usdt / leverage:.2f},止损=-{(stop_price - open_price) / open_price :.2%} {leverage=}, db_id={order_model.id}, {order=}"
+        logger.info(message)
         Order.objects.update_obj(order_model, properties={"low_point": series_to_dict(low_point), "stop_price": stop_price})
         send_trade_email(subject=f"下单成功,{symbol=}, usdt={usdt / leverage:.2f}", content=message,
                          to_recipients=RECEIVE_EMAIL)
