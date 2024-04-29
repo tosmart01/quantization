@@ -13,7 +13,7 @@ from common.tools import record_time
 from config.settings import CRON_INTERVAL, MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT, \
     CONSOLIDATION_HIGH_COUNT
 from strategy.base import BaseStrategy
-from strategy.tools import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
+from strategy.strategy_helper import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
     check_high_value_in_range, adapt_by_percent, get_entry_signal_low_point
 from order.enums import DirectionEnum, SideEnum
 from schema.order_schema import OrderModel

@@ -43,6 +43,8 @@ NEAR_HIGH_K_COUNT = int(os.getenv("NEAR_HIGH_K_COUNT", 2))
 COMPARE_HIGH_K_COUNT = int(os.getenv("COMPARE_HIGH_K_COUNT", 1))
 # 设置止损最大比例
 MAX_STOP_LOSS_RATIO = float(os.getenv("MAX_STOP_LOSS_RATIO", 0.4))
+# 设置最大止损最大百分比（优先级最高）
+MAX_STOP_LOSS_PERCENT = float(os.getenv("MAX_STOP_LOSS_PERCENT", 0.03))
 # 判断布林带开口比例
 OPENING_THRESHOLD = float(os.getenv("OPENING_THRESHOLD", 1.2))
 # 判断布林带收敛比例

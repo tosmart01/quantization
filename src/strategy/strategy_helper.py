@@ -42,7 +42,7 @@ def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, AM: float, ) -
     @param AM: 近N日价格波动区间
     @return:
     """
-    verify = (compare_k.high - 0.95 * AM) <= k.high <= (compare_k.high + 0.85 * AM)
+    verify = (compare_k.high - 0.65 * AM) <= k.high <= (compare_k.high + 0.85 * AM)
     return verify
 
 

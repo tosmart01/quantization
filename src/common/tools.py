@@ -5,7 +5,7 @@
 import time
 from datetime import datetime
 
-import talib
+# import talib
 import pandas as pd
 from loguru import logger
 from pandas import Timestamp
@@ -28,8 +28,13 @@ def fill_consecutive_true(arr: list[bool], offset=20, ratio=0.9) -> list[bool]:
 
 
 def add_band_fields(df: pd.DataFrame) -> pd.DataFrame:
-    df['upper_band'], df['middle_band'], df['lower_band'] = talib.BBANDS(df['close'], timeperiod=20, nbdevup=2,
-                                                                         nbdevdn=2, matype=0)
+    # df['upper_band'], df['middle_band'], df['lower_band'] = talib.BBANDS(df['close'], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+    df['ma'] = df['close'].rolling(window=20).mean()
+    df['sd'] = df['close'].rolling(window=20).std()
+    # 计算布林带的上轨、中轨和下轨
+    df['upper_band'] = df['ma'] + (df['sd'] * 2)
+    df['middle_band'] = df['ma']
+    df['lower_band'] = df['ma'] - (df['sd'] * 2)
     df['band_width'] = df['upper_band'] - df['lower_band']
     # 确定盘整区间
     df['short_term_avg_width'] = df['band_width'].rolling(window=30).mean()

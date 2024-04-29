@@ -13,4 +13,6 @@ tqdm==4.63.1
 typing_extensions==4.9.0
 urllib3==1.26.15
 loguru
-talib
+strenum
+python-binance
+scipy
