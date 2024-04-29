@@ -1,4 +1,4 @@
-## Little Quantization
+## CoinDreamer
 <br>
 
 **警告⚠️:** 总体杠杆比例绝对不能超过5倍，否则有爆仓风险。<br><br>
