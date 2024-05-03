@@ -9,18 +9,47 @@ from datetime import datetime
 import pandas as pd
 
 from common.log import logger
-from common.tools import record_time
+from common.tools import record_time, round_float_precision
 from config.settings import CRON_INTERVAL, MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT, \
-    CONSOLIDATION_HIGH_COUNT
+    CONSOLIDATION_HIGH_COUNT, M_DECLINE_PERCENT, MAX_STOP_LOSS_RATIO, MAX_STOP_LOSS_PERCENT
 from strategy.base import BaseStrategy
 from strategy.strategy_helper import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
-    check_high_value_in_range, adapt_by_percent, get_entry_signal_low_point
+    check_high_value_in_range, adapt_by_percent, get_m_head_entry_low_point, get_m_head_low_point
 from order.enums import DirectionEnum, SideEnum
 from schema.order_schema import OrderModel
 from exceptions.custom_exceptions import DateTimeError
 
 
 class MHeadStrategy(BaseStrategy):
+
+    def adapt_loss_ratio(self, df: pd.DataFrame) -> float:
+        return (df.tr.mean() / df.close.mean()) * (M_DECLINE_PERCENT * MAX_STOP_LOSS_RATIO)
+
+    def get_stop_loss_price(self, start_data: pd.Series, compare_data: pd.Series, df: pd.DataFrame) -> float:
+        stop_ratio = self.adapt_loss_ratio(df)
+        compare_high = max(compare_data.high, start_data.high)
+        pct_change = (compare_high - start_data.close) / start_data.close
+        if compare_high > start_data.close and pct_change <= stop_ratio:
+            # 根据波动率自适应止损价
+            close_price = compare_high
+        elif start_data.close < compare_data.close:
+            # 使用对比k收盘价止损
+            close_price = compare_data.close
+        else:
+            close_price = start_data.open
+            if (start_data.high - start_data.close) / start_data.close <= stop_ratio:
+                close_price = start_data.high
+                logger.info(
+                    f"{self.symbol}, 开盘价止损,{(close_price - start_data.close) / start_data.close:.2%}, {start_data.date=}")
+        # 设置最大止损
+        if (close_price - start_data.close) / start_data.close >= MAX_STOP_LOSS_PERCENT:
+            close_price = min((close_price - start_data.close) / 2 + start_data.close,
+                              start_data.close * (1 + MAX_STOP_LOSS_PERCENT) * 1.1
+                              )
+            close_price = round_float_precision(start_data.close, close_price)
+            logger.info(
+                f"{self.symbol}设置最大止损={(close_price - start_data.close) / start_data.close:.2%},  {start_data.date=}")
+        return close_price
 
     def check_near_volume(self, current_k: pd.Series, compare_k: pd.Series, df: pd.DataFrame) -> bool:
         current_volume = df.loc[current_k.name - 1: current_k.name + 1, 'volume'].mean()
@@ -44,15 +73,14 @@ class MHeadStrategy(BaseStrategy):
         last_k = df.iloc[-1]
         low_value = df.loc[compare_high_k.name: last_k.name, 'low'].min()
         decline_percent = adapt_by_percent(df)
-        left_low_point = get_entry_signal_low_point(df, compare_high_k)
+        left_low_point = get_m_head_entry_low_point(df, compare_high_k)
         if left_low_point is not None:
             if last_k.name - left_low_point.name >= 23:
                 low_value = min(left_low_point.low, low_value)
         pct_change_verify = (max(last_k.high, last_high_k.high) - low_value) / low_value > decline_percent
         return pct_change_verify
 
-    def find_enter_point(self, compare_high_index: int, df: pd.DataFrame, high_index_list: list) -> tuple[
-        bool, pd.Series]:
+    def find_enter_point(self, compare_high_index: int, df: pd.DataFrame, high_index_list: list) -> tuple[bool, pd.Series]:
         compare_high_k = df.loc[high_index_list[compare_high_index]]
         last_high_k = df.loc[high_index_list[-1]]
         last_k: pd.Series = df.iloc[-1]
@@ -115,7 +143,10 @@ class MHeadStrategy(BaseStrategy):
         df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
         verify, compare_k = self.check_near_prior_high_point(df)
         if verify:
+            current_k: pd.Series = df.iloc[-1]
             logger.info(f"条件单出现, symbol={self.symbol}, 日期={df.iloc[-1]['date']}")
+            low_point = get_m_head_low_point(df, compare_k, current_k)
+            stop_price = self.get_stop_loss_price(current_k, compare_k, df)
             order = self.order_module.create_order(symbol=self.symbol,
                                                    backtest=self.backtest_info,
                                                    df=df,
@@ -123,7 +154,9 @@ class MHeadStrategy(BaseStrategy):
                                                    compare_k=compare_k,
                                                    side=SideEnum.SELL,
                                                    leverage=self.leverage,
-                                                   usdt=self.buy_usdt
+                                                   usdt=self.buy_usdt,
+                                                   low_point=low_point,
+                                                   stop_price=stop_price
                                                    )
             return order
 

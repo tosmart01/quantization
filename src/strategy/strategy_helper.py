@@ -25,15 +25,6 @@ def recent_kline_avg_amplitude(data: pd.DataFrame) -> float:
     return ((data['high'] - data['low'])).mean()
 
 
-def average_volume_around_high_point(data: pd.DataFrame) -> float:
-    """
-    高点周围三根k线成交量平均值
-    @param data:  pd.DataFrame
-    @return:
-    """
-    ...
-
-
 def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, AM: float, ) -> bool:
     """
     验证当前k是否在对比k的高点区间内
@@ -123,19 +114,19 @@ def get_shadow_line_ratio(data: pd.Series) -> float:
         return 0
 
 
-def get_low_point(df: pd.DataFrame, order: OrderModel) -> pd.Series | None:
+def get_m_head_low_point(df: pd.DataFrame, compare_k: pd.Series, current_k: pd.Series) -> pd.Series | None:
     low_index_list = find_low_index(df)
     low_df = df.loc[low_index_list]
-    low_point_left = low_df.loc[low_df['date'] < order.compare_data.date]
-    low_point_right = low_df.loc[low_df['date'] > order.compare_data.date]
+    low_point_left = low_df.loc[low_df['date'] < compare_k.date]
+    low_point_right = low_df.loc[low_df['date'] > compare_k.date]
     low_point = None
     if not low_point_right.empty:
         low_point = low_point_right.iloc[0]
     elif not low_point_left.empty:
         low_point = low_point_left.iloc[-1]
-    start_k = df.loc[df['date'] == order.start_data.date].iloc[-1]
+    start_k = df.loc[df['date'] == current_k.date].iloc[-1]
     if abs(start_k.name - low_point.name) <= MIN_TRADE_COUNT:
-        min_index = df.loc[(df.date > order.compare_data.date) & (df.date < order.start_data.date), 'low'].idxmin()
+        min_index = df.loc[(df.date > compare_k.date) & (df.date < current_k.date), 'low'].idxmin()
         min_point: pd.Series = df.loc[min_index]
         if min_point.low <= low_point.low:
             low_point = min_point
@@ -144,7 +135,7 @@ def get_low_point(df: pd.DataFrame, order: OrderModel) -> pd.Series | None:
     return low_point
 
 
-def get_entry_signal_low_point(df: pd.DataFrame, compare_k: pd.Series) -> pd.Series:
+def get_m_head_entry_low_point(df: pd.DataFrame, compare_k: pd.Series) -> pd.Series:
     low_index_list = find_low_index(df)
     low_df = df.loc[low_index_list]
     low_point_left = low_df.loc[low_df['date'] < compare_k.date]

@@ -16,6 +16,7 @@ from exceptions.custom_exceptions import TestEndingError
 from order.enums import SideEnum, OrderKindEnum
 from schema.order_schema import OrderModel
 from strategy.m_head import MHeadStrategy
+from strategy.strategy_helper import get_m_head_low_point
 
 
 class MTestStrategy(MHeadStrategy):
@@ -34,6 +35,9 @@ class MTestStrategy(MHeadStrategy):
         df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
         verify, compare_k = self.check_near_prior_high_point(df)
         if verify:
+            current_k = df.iloc[-1]
+            low_point = get_m_head_low_point(df, compare_k, current_k)
+            stop_price = self.get_stop_loss_price(current_k, compare_k, df)
             logger.info(f"条件单出现, symbol={self.symbol}, 日期={df.iloc[-1]['date']}")
             order = self.order_module.create_order(symbol=self.symbol,
                                                    backtest=self.backtest_info,
@@ -42,7 +46,9 @@ class MTestStrategy(MHeadStrategy):
                                                    compare_k=compare_k,
                                                    side=SideEnum.SELL,
                                                    leverage=self.leverage,
-                                                   usdt=self.buy_usdt
+                                                   usdt=self.buy_usdt,
+                                                   low_point=low_point,
+                                                   stop_price=stop_price
                                                    )
             return order
 

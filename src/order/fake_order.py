@@ -7,11 +7,9 @@
 import pandas as pd
 
 from order.enums import DirectionEnum, SideEnum
-from order.stop_price import get_stop_loss_price
 
 from schema.backtest import Backtest
 from schema.order_schema import OrderModel, OrderDataDict
-
 
 
 class FakeOrder(object):
@@ -21,19 +19,16 @@ class FakeOrder(object):
                 return order
 
     def create_fake_order(self, symbol: str, backtest: Backtest, df: pd.DataFrame, interval: str,
-                          compare_k: pd.Series, side: SideEnum, leverage: int=None) -> OrderModel:
+                          compare_k: pd.Series, side: SideEnum, leverage: int = None, stop_price: float = None,
+                          low_point: pd.Series = None) -> OrderModel:
         k: pd.Series = df.iloc[-1]
         order_data = k.to_dict()
         order_data = OrderDataDict(**order_data)
         compare_data = OrderDataDict(**compare_k.to_dict())
         fake_order = OrderModel(symbol=symbol, active=True, start_time=k['date'], start_data=order_data,
-                                open_price=k.close,
+                                open_price=k.close, stop_price=stop_price,
+                                low_point=OrderDataDict(**low_point.to_dict()),
                                 interval=interval, compare_data=compare_data, side=side, leverage=leverage)
-        from strategy.strategy_helper import get_low_point
-        stop_price = get_stop_loss_price(fake_order, k, df)
-        fake_order.stop_price = stop_price
-        low_point = get_low_point(df, fake_order)
-        fake_order.low_point = OrderDataDict(**low_point.to_dict())
         backtest.order_list.append(fake_order)
         return fake_order
 
