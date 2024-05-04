@@ -4,35 +4,31 @@
 # @Site: 
 # @File: fake_order.py
 # @Software: PyCharm
+from typing import TYPE_CHECKING
 import pandas as pd
 
-from order.enums import DirectionEnum, SideEnum
+from order.enums import DirectionEnum
 
-from schema.backtest import Backtest
-from schema.order_schema import OrderModel, OrderDataDict
+if TYPE_CHECKING:
+    from schema.order_schema import OrderModel
+    from schema.backtest import Backtest
 
 
 class FakeOrder(object):
-    def get_open_fake_order(self, symbol: str, backtest: Backtest) -> OrderModel:
+    @staticmethod
+    def get_open_fake_order(symbol: str, backtest: "Backtest") -> "OrderModel":
         for order in backtest.order_list:
             if order.active and order.symbol == symbol:
                 return order
 
-    def create_fake_order(self, symbol: str, backtest: Backtest, df: pd.DataFrame, interval: str,
-                          compare_k: pd.Series, side: SideEnum, leverage: int = None, stop_price: float = None,
-                          low_point: pd.Series = None) -> OrderModel:
-        k: pd.Series = df.iloc[-1]
-        order_data = k.to_dict()
-        order_data = OrderDataDict(**order_data)
-        compare_data = OrderDataDict(**compare_k.to_dict())
-        fake_order = OrderModel(symbol=symbol, active=True, start_time=k['date'], start_data=order_data,
-                                open_price=k.close, stop_price=stop_price,
-                                low_point=OrderDataDict(**low_point.to_dict()),
-                                interval=interval, compare_data=compare_data, side=side, leverage=leverage)
-        backtest.order_list.append(fake_order)
-        return fake_order
+    @staticmethod
+    def create_fake_order(backtest: "Backtest", order_schema: "OrderModel") -> "OrderModel":
+        backtest.order_list.append(order_schema)
+        return order_schema
 
-    def fake_stop_loss(self, order: OrderModel, df: pd.DataFrame, direction: DirectionEnum, backtest: Backtest) -> bool:
+    @staticmethod
+    def fake_stop_loss(order: "OrderModel", df: pd.DataFrame, direction: DirectionEnum,
+                       backtest: "Backtest") -> bool:
         current_k: pd.Series = df.iloc[-1]
         stop = False
         close_price = None
@@ -45,15 +41,16 @@ class FakeOrder(object):
             close_price = order.compare_data.low
         if stop:
             order.active = False
-            order.end_data = OrderDataDict(**current_k.to_dict())
+            order.end_data = order.dict_to_order_field(current_k.to_dict())
             order.end_time = current_k.date
             order.close_price = close_price
             order.stop_loss = True
             return stop
 
-    def close_fake_order(self, order: OrderModel, df: pd.DataFrame):
+    @staticmethod
+    def close_fake_order(order: "OrderModel", df: pd.DataFrame):
         current_k: pd.Series = df.iloc[-1]
         order.active = False
-        order.end_data = OrderDataDict(**current_k.to_dict())
+        order.end_data = order.dict_to_order_field(current_k.to_dict())
         order.end_time = current_k.date
         order.close_price = current_k.close

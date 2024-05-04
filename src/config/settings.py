@@ -25,6 +25,7 @@ PROXIES = {
 
 # 回测数据目录
 BACKTEST_DATA_DIR = os.getenv("BACKTEST_DATA_DIR", os.path.join(BASE_DIR, 'data', 'test'))
+# ============= M头配置
 # 获取极值区间长度
 MAX_VALUE_PERIOD = int(os.getenv("MAX_VALUE_PERIOD", 8))
 # 获取极值区间长度
@@ -49,6 +50,11 @@ OPENING_THRESHOLD = float(os.getenv("OPENING_THRESHOLD", 1.2))
 ASTRINGENCY_THRESHOLD = float(os.getenv("ASTRINGENCY_THRESHOLD", 0.8))
 # 判断盘整区间末尾高点数量
 CONSOLIDATION_HIGH_COUNT = int(os.getenv("CONSOLIDATION_HIGH_COUNT", 5))
+# ===============================
+
+# W底配置
+NEAR_LOW_K_COUNT = int(os.getenv("NEAR_LOW_K_COUNT", 2))
+
 
 DB_URL = os.getenv("DB_URL", f"sqlite:///{os.path.join(BASE_DIR, 'data', 'trade.db')}")
 # 是否测试

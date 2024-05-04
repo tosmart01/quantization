@@ -8,8 +8,6 @@ import pandas as pd
 from scipy.signal import find_peaks
 
 from config.settings import MAX_VALUE_PERIOD, MIN_VALUE_PERIOD, MIN_TRADE_COUNT, M_DECLINE_PERCENT
-from schema.order_schema import OrderModel
-
 
 
 def adapt_by_percent(df: pd.DataFrame):
@@ -22,18 +20,18 @@ def recent_kline_avg_amplitude(data: pd.DataFrame) -> float:
     近10k 振幅均值：AM
     @param data: pd.DataFrame
     """
-    return ((data['high'] - data['low'])).mean()
+    return (data['high'] - data['low']).mean()
 
 
-def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, AM: float, ) -> bool:
+def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, am: float, ) -> bool:
     """
     验证当前k是否在对比k的高点区间内
     @param k: 当前k
     @param compare_k: 对比k
-    @param AM: 近N日价格波动区间
+    @param am: 近N日价格波动区间
     @return:
     """
-    verify = (compare_k.high - 0.65 * AM) <= k.high <= (compare_k.high + 0.85 * AM)
+    verify = (compare_k.high - 0.65 * am) <= k.high <= (compare_k.high + 0.85 * am)
     return verify
 
 
@@ -43,6 +41,7 @@ def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominen
     尾部插入一个值, 为最后一个值 减去万分之一
     @param df: pd.DataFrame
     @param distance: 计算极值的区间
+    @param prominence: 计算极值的区间
     @return: 极值的索引列表
     """
     find_series: pd.Series = df['high']
@@ -60,24 +59,6 @@ def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominen
             max_value = round_data.max()
             if max_value == df.loc[index, 'high']:
                 new_index_list.append(index)
-    # if len(new_index_list) > 1:
-    #     k = df.loc[new_index_list[-1]]
-    #     AM = recent_kline_avg_amplitude(df.loc[k.name - 9: k.name])
-    #     last_index = new_index_list.pop()
-    #     distant_high_list: pd.Series = abs(df.loc[(df.index.isin(new_index_list[:-1])), 'high'] - k.high).sort_values()[:3]
-    #     distant_high_list = distant_high_list.sort_index()
-    #     # 添加较远距离高点到列表末尾, 优先考虑远距离高点
-    #     for index in distant_high_list.index:
-    #         if index not in new_index_list[-3:]:
-    #             new_k: pd.Series = df.loc[index]
-    #             # 判定高点是距离当前k线较远的k线高点
-    #             if (k.date - new_k.date).total_seconds() >= DECLINE_HIGH_TIME * 60:
-    #                 if check_high_value_in_range(k, new_k, AM):
-    #                     if new_k.high >= df.loc[index + 1: k.name - 1, 'high'].max():
-    #                         new_index_list.remove(index)
-    #                         new_index_list.append(index)
-    #                         break
-    #     new_index_list.append(last_index)
     return new_index_list
 
 
@@ -88,7 +69,11 @@ def find_low_index(df: pd.DataFrame, distance: int = MIN_VALUE_PERIOD) -> list[i
     @param distance: 计算极值的区间
     @return: 极值的索引列表
     """
-    find_index_list: list[int] = find_peaks(-df['low'], distance=distance)[0].tolist()
+    find_series: pd.Series = df['low']
+    insert_tail = find_series.iloc[-1] + find_series.iloc[-1] * 0.0001
+    insert_series = pd.Series([insert_tail], index=[find_series.index[-1] + 1])
+    find_series: pd.Series = pd.concat([find_series, insert_series])
+    find_index_list: list[int] = find_peaks(-find_series, distance=distance)[0].tolist()
     offset = int(distance / 3)
     new_index_list = []
     for index in find_index_list:

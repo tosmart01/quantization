@@ -25,3 +25,7 @@ class UnsupportedStrategyError(BaseException):
 
 class DateTimeError(BaseException):
     default_error_message = "执行时间异常"
+
+
+class StrategyNotMatchError(BaseException):
+    default_error_message = "策略执行最小条件不满足"

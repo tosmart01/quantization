@@ -6,7 +6,8 @@
 # @Software: PyCharm
 import pandas as pd
 from pydantic import BaseModel, ConfigDict
-from schema.order_schema import OrderModel
+
+from .order_schema import OrderModel
 
 
 class Backtest(BaseModel):

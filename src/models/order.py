@@ -9,7 +9,6 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, Float, JSON, 
 
 from controller.order import OrderController
 from models.base import BaseModel, Base, engine
-from schema.order_schema import OrderModel, OrderDataDict
 
 
 class Order(BaseModel):
@@ -34,18 +33,28 @@ class Order(BaseModel):
     side = Column(String(16), nullable=True, comment='开仓方向')
     leverage = Column(SmallInteger, nullable=True, comment="杠杆")
     low_point = Column(JSON, nullable=True, comment='平仓参考低点')
+    left_bottom = Column(JSON, nullable=True, comment='left_bottom')
+    right_bottom = Column(JSON, nullable=True, comment='right_bottom')
+    head_point = Column(JSON, nullable=True, comment='head_point')
+    last_high_data = Column(JSON, nullable=True, comment='last_high_data')
+    usdt = Column(Float, nullable=True, comment='开仓金额')
 
-    def to_schema(self) -> OrderModel:
+    def to_schema(self):
+        from schema.order_schema import OrderModel, OrderDataDict
+        order_data_fields = [('start_data', self.start_data), ('end_data', self.end_data),
+                             ('last_high_data', self.last_high_data),
+                             ('compare_data', self.compare_data), ('low_point', self.low_point),
+                             ('head_point', self.head_point), ('left_bottom', self.left_bottom),
+                             ('right_bottom', self.right_bottom)]
         schema = OrderModel(symbol=self.symbol, active=self.active,
-                   start_time=self.start_time, interval=self.interval,
-                   end_time=self.end_time, start_data=OrderDataDict(**self.start_data),
-                   end_data=OrderDataDict(**self.end_data) if self.end_data else None,
-                   compare_data=OrderDataDict(**self.compare_data) if self.compare_data else None,
-                   close_price=self.close_price, open_price=self.open_price,
-                   stop_loss=self.stop_loss, side=self.side, leverage=self.leverage,
-                   db_id=self.id, low_point=OrderDataDict(**self.low_point) if self.low_point else None,
-                   stop_price=self.stop_price
-                   )
+                            start_time=self.start_time, interval=self.interval,
+                            close_price=self.close_price, open_price=self.open_price,
+                            end_time=self.end_time,
+                            db_id=self.id,
+                            stop_loss=self.stop_loss, side=self.side, leverage=self.leverage,
+                            stop_price=self.stop_price,
+                            **{name: OrderDataDict(**value) for name, value in order_data_fields if value}
+                            )
         return schema
 
 

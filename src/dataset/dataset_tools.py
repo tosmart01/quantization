@@ -4,15 +4,14 @@
 # @Site: 
 # @File: dataset.py
 # @Software: PyCharm
-import os
 import pandas as pd
 from retry import retry
 
 from schema.backtest import Backtest
-from config.settings import BACKTEST_DATA_DIR, TRADE_MAX_INTERVAL
+from config.settings import TRADE_MAX_INTERVAL
 from client.binance_client import client
 from common.tools import format_df, add_band_fields
-from exceptions.custom_exceptions import TestEndingError, DataDeficiencyError
+from exceptions.custom_exceptions import TestEndingError
 
 
 class DataModule:
@@ -31,7 +30,8 @@ class DataModule:
         df = format_df(data, symbol)
         return df
 
-    def get_fake_klines(self, backtest_info: Backtest) -> pd.DataFrame:
+    @staticmethod
+    def get_fake_klines(backtest_info: Backtest) -> pd.DataFrame:
         df = backtest_info.df.loc[backtest_info.start_offset: backtest_info.end_offset].reset_index(drop=True)
         if df.empty or backtest_info.end_offset > len(backtest_info.df):
             raise TestEndingError()
@@ -39,10 +39,12 @@ class DataModule:
         backtest_info.end_offset += 1
         return df
 
-    def load_fake_klines(self, backtest_path: str) -> pd.DataFrame:
+    @staticmethod
+    def load_fake_klines(backtest_path: str) -> pd.DataFrame:
         df = pd.read_pickle(backtest_path)
         df['tr'] = df['high'] - df['low']
         df['is_bull'] = df['close'] > df['open']
-        # df = df.loc[(df['date'] >= '2023-04-18 00:00:00') & (df['date'] < '2023-06-06 23:30:00') ].reset_index(drop=True)
+        # df = df.loc[(df['date'] >= '2023-04-18 00:00:00') & (df['date'] \
+        # < '2023-06-06 23:30:00') ].reset_index(drop=True)
         df = add_band_fields(df)
         return df.reset_index(drop=True)

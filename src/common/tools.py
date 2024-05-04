@@ -9,6 +9,7 @@ from datetime import datetime
 import pandas as pd
 from loguru import logger
 from pandas import Timestamp
+from pydantic import BaseModel
 
 from config.settings import OPENING_THRESHOLD, ASTRINGENCY_THRESHOLD
 
@@ -28,7 +29,8 @@ def fill_consecutive_true(arr: list[bool], offset=20, ratio=0.9) -> list[bool]:
 
 
 def add_band_fields(df: pd.DataFrame) -> pd.DataFrame:
-    # df['upper_band'], df['middle_band'], df['lower_band'] = talib.BBANDS(df['close'], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
+    # df['upper_band'], df['middle_band'], df['lower_band'] = \
+    # talib.BBANDS(df['close'], timeperiod=20, nbdevup=2, nbdevdn=2, matype=0)
     df['ma'] = df['close'].rolling(window=20).mean()
     df['sd'] = df['close'].rolling(window=20).std()
     # 计算布林带的上轨、中轨和下轨
@@ -41,9 +43,11 @@ def add_band_fields(df: pd.DataFrame) -> pd.DataFrame:
     df['long_term_avg_width'] = df['band_width'].rolling(window=60).mean()
     df['band_width_ma'] = df['band_width'].rolling(window=30).mean()
     df['band_width_change'] = df['band_width'] / df['band_width_ma']
-    df['consolidation'] = ((df['short_term_avg_width'] < df['long_term_avg_width'] * ASTRINGENCY_THRESHOLD)  # 短期宽度小于长期宽度的80%
-                           & (df['band_width_change'].abs() < OPENING_THRESHOLD) #布林带开口
-                           )
+    df['consolidation'] = (
+            # 短期宽度小于长期宽度的80%
+            (df['short_term_avg_width'] < df['long_term_avg_width'] * ASTRINGENCY_THRESHOLD)
+            & (df['band_width_change'].abs() < OPENING_THRESHOLD)  # 布林带开口
+    )
     df['consolidation'] = fill_consecutive_true(df['consolidation'])
     return df
 
@@ -63,7 +67,7 @@ def format_df(data, symbol) -> pd.DataFrame:
     # 阳线阴线
     df['is_bull'] = df['close'] > df['open']
     # 去掉最后一行
-    #     df = df.iloc[:-1, ::]
+    # df = df.iloc[:-1, ::]
     df = add_band_fields(df)
     return df
 
@@ -80,7 +84,7 @@ def record_time(func):
     return wrapper
 
 
-def series_to_dict(series: pd.Series | dict, fields=None) -> dict:
+def series_to_dict(series: pd.Series | BaseModel, fields=None) -> dict:
     from schema.order_schema import OrderDataDict
     res: dict = series.to_dict() if isinstance(series, pd.Series) else series.dict()
     fields = list(OrderDataDict.model_fields.keys()) if not fields else fields
