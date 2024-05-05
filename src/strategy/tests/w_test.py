@@ -1,26 +1,25 @@
 # -*- coding = utf-8 -*-
-# @Time: 2024-04-07 23:22:47
+# @Time: 2024-05-04 16:52:49
 # @Author: Donvink wuwukai
 # @Site: 
-# @File: m_test.py
+# @File: w_test.py
 # @Software: PyCharm
 import json
 
-import pandas as pd
 from tqdm import tqdm
+import pandas as pd
 
 from common.json_encode import ComplexEncoder
 from common.log import logger
 from common.tools import record_time
-from exceptions.custom_exceptions import TestEndingError
-from order.enums import OrderKindEnum
-from schema.order_schema import OrderModel
-from strategy.m_head import MHeadStrategy
+from exceptions.custom_exceptions import TestEndingError, StrategyNotMatchError
+from order import OrderKindEnum
+from src.strategy.w_bottom import WBottomStrategy
 
 
-class MTestStrategy(MHeadStrategy):
+class TestWBottomStrategy(WBottomStrategy):
 
-    def entry_signal(self) -> OrderModel:
+    def entry_signal(self):
         ### 测试使用 =========
         # test_dates = [
         #     pd.to_datetime('2022-01-27 12:00:00')
@@ -29,14 +28,17 @@ class MTestStrategy(MHeadStrategy):
         # if df.iloc[-1]['date'] not in test_dates:
         #     return
         ### ============
-        if self.backtest_info.open_back:
-            self.t.update(1)
+        self.t.update(1)
         df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
-        order_schema = self.check_near_prior_high_point(df)
+        try:
+            order_schema = self.find_w_bottom_entry(df)
+        except StrategyNotMatchError:
+            order_schema = None
         if order_schema:
             logger.info(f"条件单出现, symbol={self.symbol}, 日期={df.iloc[-1]['date']}")
             order = self.order_module.create_order(backtest=self.backtest_info,
                                                    df=df,
+                                                   usdt=self.buy_usdt,
                                                    order_schema=order_schema
                                                    )
             return order
@@ -63,10 +65,9 @@ class MTestStrategy(MHeadStrategy):
 
 
 if __name__ == '__main__':
-    MTestStrategy(symbol="ETHUSDT",
-                  interval='1h',
+    TestWBottomStrategy(symbol="BTCUSDT",
+                  interval='15m',
                   backtest=True,
                   order_kind=OrderKindEnum.BINANCE,
-                  backtest_path=r"E:\work_dir\workFile\quantization\src\data\test\ethusdt回测1h.pkl"
+                  backtest_path=r"E:\work_dir\workFile\quantization\src\data\test\btcusdt回测1h.pkl"
                   ).execute()
-

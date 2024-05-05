@@ -62,7 +62,7 @@ def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominen
     return new_index_list
 
 
-def find_low_index(df: pd.DataFrame, distance: int = MIN_VALUE_PERIOD) -> list[int]:
+def find_low_index(df: pd.DataFrame, distance: int = MIN_VALUE_PERIOD, prominence: int = None) -> list[int]:
     """
     计算数据内局部最小值索引
     @param df: pd.DataFrame
@@ -73,7 +73,7 @@ def find_low_index(df: pd.DataFrame, distance: int = MIN_VALUE_PERIOD) -> list[i
     insert_tail = find_series.iloc[-1] + find_series.iloc[-1] * 0.0001
     insert_series = pd.Series([insert_tail], index=[find_series.index[-1] + 1])
     find_series: pd.Series = pd.concat([find_series, insert_series])
-    find_index_list: list[int] = find_peaks(-find_series, distance=distance)[0].tolist()
+    find_index_list: list[int] = find_peaks(-find_series, distance=distance, prominence=prominence)[0].tolist()
     offset = int(distance / 3)
     new_index_list = []
     for index in find_index_list:

@@ -91,7 +91,7 @@ class BinanceOrder(OrderMixin):
                                                                           "close_price": k.close,
                                                                           "end_time": k.date.to_pydatetime()})
         if order.side == SideEnum.SELL:
-            profit = (order.open_price - k.close) / k.close
+            profit = (order.open_price - k.close) / order.open_price
         else:
             profit = (k.close - order.open_price) / order.open_price
         message = (f"symbol={order.symbol} 平仓成功, 预期获利={profit:.3%}, update_info={update_info}, {close_info=},"

@@ -37,8 +37,9 @@ class FakeOrder(object):
                 stop = True
                 close_price = order.stop_price
         if direction == DirectionEnum.LONG:
-            stop = current_k.low < order.compare_data.low
-            close_price = order.compare_data.low
+            if current_k.low <= order.stop_price:
+                close_price = order.stop_price
+                stop = True
         if stop:
             order.active = False
             order.end_data = order.dict_to_order_field(current_k.to_dict())
