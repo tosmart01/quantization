@@ -16,14 +16,15 @@ from exceptions.custom_exceptions import StrategyNotMatchError, DateTimeError
 from order.enums import SideEnum, DirectionEnum
 from schema.order_schema import OrderModel, OrderDataDict
 from src.strategy.base import BaseStrategy
-from src.strategy.strategy_helper import find_low_index, recent_kline_avg_amplitude, find_high_index
+from src.strategy.strategy_helper import find_low_index, recent_kline_avg_amplitude, find_high_index, \
+    get_lower_shadow_ratio
 
 
 class WBottomStrategy(BaseStrategy):
     distance = 15
     prominence = 5
     compare_low_k_count = 2
-    w_decline_percent = 3
+    w_decline_percent = 2.8
     loss_decrease_percent = 0.4
     max_stop_loss = 0.03
 
@@ -56,13 +57,29 @@ class WBottomStrategy(BaseStrategy):
             print(f"涨幅过滤,{min_pct_change=:.4f}, {head_pct=:.4f}, {left_pct=:.4f}")
         raise StrategyNotMatchError()
 
-    def check_point_range(self, df: pd.DataFrame, left_bottom: pd.Series, right_bottom: pd.Series):
-        am = (recent_kline_avg_amplitude(df.loc[right_bottom.name - 9: right_bottom.name]) + \
-              recent_kline_avg_amplitude(df.loc[left_bottom.name - 9: left_bottom.name])) / 2
-        verify_list = [am * 0.55 <= abs(right_bottom.low - left_bottom.low) <= am * 1.6,
+    def check_point_range(self, am: float, left_bottom: pd.Series, right_bottom: pd.Series):
+        verify_list = [am * 0.65 <= abs(right_bottom.low - left_bottom.low) <= am * 1.8,
                        abs(right_bottom.low - left_bottom.low) <= am * 0.15
                        ]
         return any(verify_list)
+
+    def get_take_profit_price_range(self, left_bottom, right_bottom, head_point, current_k) -> tuple[float, float]:
+        min_profit_loss_ratio = 3
+        max_take_price = (head_point.high - right_bottom.low) * 1.5 + right_bottom.low
+        if left_bottom.low > right_bottom.low:
+            profit_loss_ratio = (head_point.close - current_k.close) / (current_k.close - right_bottom.low)
+            take_price = head_point.close
+            if profit_loss_ratio <= min_profit_loss_ratio:
+                take_price = (current_k.close - right_bottom.low) * min_profit_loss_ratio + current_k.close
+                take_price = min(max_take_price, take_price)
+        else:
+            profit_loss_ratio = (head_point.high - current_k.close) / (current_k.close - right_bottom.low)
+            take_price = head_point.high
+            if profit_loss_ratio <= min_profit_loss_ratio:
+                take_price = (current_k.close - right_bottom.low) * min_profit_loss_ratio + current_k.close
+                take_price = min(max_take_price, take_price)
+        left = (take_price - current_k.close) * 0.8 + current_k.close
+        return left, take_price
 
     def check_w_bottom(self, df: pd.DataFrame, left_bottom: pd.Series, right_bottom: pd.Series):
         current_k = df.iloc[-1]
@@ -70,12 +87,22 @@ class WBottomStrategy(BaseStrategy):
         stop_price = self.get_stop_price(df, right_bottom, current_k)
         if current_k.close < right_bottom.low or current_k.close < stop_price:
             raise StrategyNotMatchError()
-        verify = self.check_point_range(df, left_bottom, right_bottom)
+        am = (recent_kline_avg_amplitude(df.loc[right_bottom.name - 9: right_bottom.name]) + \
+              recent_kline_avg_amplitude(df.loc[left_bottom.name - 9: left_bottom.name])) / 2
+        verify = self.check_point_range(am, left_bottom, right_bottom)
         if verify and current_k.name - right_bottom.name <= NEAR_LOW_K_COUNT:
+            current_am = recent_kline_avg_amplitude(df.loc[current_k.name - 9: current_k.name])
+            shadow_ratio = get_lower_shadow_ratio(right_bottom)
+            # 下引线过长排除
+            if shadow_ratio >= 0.5 and current_am * 1.4 < right_bottom.high - right_bottom.low:
+                raise StrategyNotMatchError()
             head_point = self.get_head_point(df, left_bottom, right_bottom)
-            expected_profit = (head_point.high - current_k.close) / current_k.close
+            _, take_price  = self.get_take_profit_price_range(left_bottom, right_bottom, head_point, current_k)
+            expected_profit = (take_price - current_k.close) / current_k.close
             expected_loss = (current_k.close - right_bottom.low) / current_k.close
             profit_loss_ratio = expected_profit / expected_loss
+            if profit_loss_ratio <= 1.5:
+                raise StrategyNotMatchError()
             # 必须cover手续费
             return OrderModel(symbol=self.symbol,
                               active=True, start_time=current_k.date,
@@ -128,32 +155,41 @@ class WBottomStrategy(BaseStrategy):
                                                    )
             return order
 
+
     def exit_signal(self, order: OrderModel):
         df = self.data_module.get_klines(order.symbol, interval=order.interval, backtest_info=self.backtest_info)
         stop_loss = self.order_module.check_stop_loss(order, df, DirectionEnum.LONG, self.backtest_info)
         if stop_loss:
             return
-        high_value = order.head_point.high
+        profit_left, take_price = self.get_take_profit_price_range(order.left_bottom,
+                                                                                             order.right_bottom,
+                                                                                             order.head_point,
+                                                                                             order.start_data)
         current_k = df.iloc[-1]
         start_k = df.loc[df.date == order.start_data.date].iloc[0]
-        min_trade_day = 10
+        min_trade_day = 12
         trade_day = current_k.name - start_k.name
-        am = recent_kline_avg_amplitude(df.loc[current_k.name - 30: current_k.name])
         verify = False
+        # am = recent_kline_avg_amplitude(df.loc[current_k.name - 30: current_k.name])
         for k in df.loc[current_k.name - 2: current_k.name].itertuples():
-            verify = (high_value - 0.1 * am) <= k.high <= (high_value + 0.1 * am) and not current_k.is_bull
+            verify = profit_left <= k.high and not current_k.is_bull
             if verify:
                 break
-            if current_k.close > high_value and not current_k.is_bull:
+            if current_k.close > take_price and not current_k.is_bull:
                 verify = True
                 break
-        loss_k_count = df.loc[current_k.name - 2: current_k.name, 'is_bull'].sum()
-        if verify and trade_day >= min_trade_day:
-            self.order_module.close_order(self.backtest_info, order, df)
-        elif loss_k_count == 0 and trade_day >= min_trade_day:
-            self.order_module.close_order(self.backtest_info, order, df)
-        elif trade_day >= 80:
-            self.order_module.close_order(self.backtest_info, order, df)
+        loss_k_count = df.loc[current_k.name - 3: current_k.name, 'is_bull'].sum()
+        if verify:# and trade_day >= min_trade_day // 2:
+            return self.order_module.close_order(self.backtest_info, order, df)
+        max_value = df.loc[current_k.name - 2: current_k.name, 'high'].max()
+        # if max_value > high_value * 0.9992 and trade_day >= 20:
+        #     return self.order_module.close_order(self.backtest_info, order, df)
+        # if trade_day >=6 and current_k.close <= order.open_price:
+        #     return self.order_module.close_order(self.backtest_info, order, df)
+        # if loss_k_count == 0 and trade_day >= min_trade_day:
+        #     return self.order_module.close_order(self.backtest_info, order, df)
+        if trade_day >= 60:
+            return self.order_module.close_order(self.backtest_info, order, df)
 
     @record_time
     def execute(self, *args, **kwargs):

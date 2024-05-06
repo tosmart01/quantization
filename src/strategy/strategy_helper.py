@@ -1,7 +1,7 @@
 # -*- coding = utf-8 -*-
 # @Time: 2024-04-05 12:31:32
 # @Author: Donvink wuwukai
-# @Site: 
+# @Site:
 # @File: tools.py
 # @Software: PyCharm
 import pandas as pd
@@ -23,7 +23,11 @@ def recent_kline_avg_amplitude(data: pd.DataFrame) -> float:
     return (data['high'] - data['low']).mean()
 
 
-def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, am: float, ) -> bool:
+def check_high_value_in_range(
+        k: pd.Series,
+        compare_k: pd.Series,
+        am: float,
+) -> bool:
     """
     验证当前k是否在对比k的高点区间内
     @param k: 当前k
@@ -31,11 +35,14 @@ def check_high_value_in_range(k: pd.Series, compare_k: pd.Series, am: float, ) -
     @param am: 近N日价格波动区间
     @return:
     """
-    verify = (compare_k.high - 0.65 * am) <= k.high <= (compare_k.high + 0.85 * am)
+    verify = (compare_k.high - 0.65 * am) <= k.high <= (compare_k.high +
+                                                        0.85 * am)
     return verify
 
 
-def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominence=0) -> list[int]:
+def find_high_index(df: pd.DataFrame,
+                    distance: int = MAX_VALUE_PERIOD,
+                    prominence=0) -> list[int]:
     """
     计算数据内局部最大值索引, 为了避免最后一个值是最大值时无法找到，
     尾部插入一个值, 为最后一个值 减去万分之一
@@ -48,13 +55,15 @@ def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominen
     insert_tail = find_series.iloc[-1] - find_series.iloc[-1] * 0.0001
     insert_series = pd.Series([insert_tail], index=[find_series.index[-1] + 1])
     find_series: pd.Series = pd.concat([find_series, insert_series])
-    find_index_list: list[int] = find_peaks(find_series, distance=distance, prominence=prominence)[0].tolist()
+    find_index_list: list[int] = find_peaks(find_series,
+                                            distance=distance,
+                                            prominence=prominence)[0].tolist()
     offset = int(distance / 3)
     new_index_list = []
     for index in find_index_list:
         left = index - offset
         right = index + offset
-        round_data: pd.Series = df.loc[left: right + 1, 'high']
+        round_data: pd.Series = df.loc[left:right + 1, 'high']
         if not round_data.empty:
             max_value = round_data.max()
             if max_value == df.loc[index, 'high']:
@@ -62,7 +71,9 @@ def find_high_index(df: pd.DataFrame, distance: int = MAX_VALUE_PERIOD, prominen
     return new_index_list
 
 
-def find_low_index(df: pd.DataFrame, distance: int = MIN_VALUE_PERIOD, prominence: int = None) -> list[int]:
+def find_low_index(df: pd.DataFrame,
+                   distance: int = MIN_VALUE_PERIOD,
+                   prominence: int = None) -> list[int]:
     """
     计算数据内局部最小值索引
     @param df: pd.DataFrame
@@ -73,13 +84,15 @@ def find_low_index(df: pd.DataFrame, distance: int = MIN_VALUE_PERIOD, prominenc
     insert_tail = find_series.iloc[-1] + find_series.iloc[-1] * 0.0001
     insert_series = pd.Series([insert_tail], index=[find_series.index[-1] + 1])
     find_series: pd.Series = pd.concat([find_series, insert_series])
-    find_index_list: list[int] = find_peaks(-find_series, distance=distance, prominence=prominence)[0].tolist()
+    find_index_list: list[int] = find_peaks(-find_series,
+                                            distance=distance,
+                                            prominence=prominence)[0].tolist()
     offset = int(distance / 3)
     new_index_list = []
     for index in find_index_list:
         left = index - offset
         right = index + offset
-        round_data: pd.Series = df.loc[left: right + 1, 'low']
+        round_data: pd.Series = df.loc[left:right + 1, 'low']
         if not round_data.empty:
             min_value = round_data.min()
             if min_value == df.loc[index, 'low']:
@@ -96,10 +109,23 @@ def get_shadow_line_ratio(data: pd.Series) -> float:
             shadow = data.high - data.open
             return shadow / (data.high - data.low)
     except ZeroDivisionError:
-        return 0
+        return 0.
 
 
-def get_m_head_low_point(df: pd.DataFrame, compare_k: pd.Series, current_k: pd.Series) -> pd.Series | None:
+def get_lower_shadow_ratio(data: pd.Series) -> float:
+    try:
+        if data.close >= data.open:
+            shadow = data.open - data.low
+            return shadow / (data.high - data.low)
+        else:
+            shadow = data.close - data.low
+            return shadow / (data.high - data.low)
+    except ZeroDivisionError:
+        return 0.
+
+
+def get_m_head_low_point(df: pd.DataFrame, compare_k: pd.Series,
+                         current_k: pd.Series) -> pd.Series | None:
     low_index_list = find_low_index(df)
     low_df = df.loc[low_index_list]
     low_point_left = low_df.loc[low_df['date'] < compare_k.date]
@@ -111,7 +137,8 @@ def get_m_head_low_point(df: pd.DataFrame, compare_k: pd.Series, current_k: pd.S
         low_point = low_point_left.iloc[-1]
     start_k = df.loc[df['date'] == current_k.date].iloc[-1]
     if abs(start_k.name - low_point.name) <= MIN_TRADE_COUNT:
-        min_index = df.loc[(df.date > compare_k.date) & (df.date < current_k.date), 'low'].idxmin()
+        min_index = df.loc[(df.date > compare_k.date) &
+                           (df.date < current_k.date), 'low'].idxmin()
         min_point: pd.Series = df.loc[min_index]
         if min_point.low <= low_point.low:
             low_point = min_point
@@ -120,7 +147,8 @@ def get_m_head_low_point(df: pd.DataFrame, compare_k: pd.Series, current_k: pd.S
     return low_point
 
 
-def get_m_head_entry_low_point(df: pd.DataFrame, compare_k: pd.Series) -> pd.Series:
+def get_m_head_entry_low_point(df: pd.DataFrame,
+                               compare_k: pd.Series) -> pd.Series:
     low_index_list = find_low_index(df)
     low_df = df.loc[low_index_list]
     low_point_left = low_df.loc[low_df['date'] < compare_k.date]
