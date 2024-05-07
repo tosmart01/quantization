@@ -4,14 +4,15 @@
 # @Site: 
 # @File: w_test.py
 # @Software: PyCharm
+import os
 import json
 
 from tqdm import tqdm
-import pandas as pd
 
 from common.json_encode import ComplexEncoder
 from common.log import logger
 from common.tools import record_time
+from config.settings import BASE_DIR
 from exceptions.custom_exceptions import TestEndingError, StrategyNotMatchError
 from order import OrderKindEnum
 from src.strategy.w_bottom import WBottomStrategy
@@ -22,7 +23,7 @@ class TestWBottomStrategy(WBottomStrategy):
     def entry_signal(self):
         ### 测试使用 =========
         # test_dates = [
-        #     pd.to_datetime('2022-01-27 12:00:00')
+        #     pd.to_datetime('2022-10-09 06:00:00')
         # ]
         # df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
         # if df.iloc[-1]['date'] not in test_dates:
@@ -69,5 +70,5 @@ if __name__ == '__main__':
                   interval='15m',
                   backtest=True,
                   order_kind=OrderKindEnum.BINANCE,
-                  backtest_path=r"E:\work_dir\workFile\quantization\src\data\test\btcusdt回测1h.pkl"
+                  backtest_path=os.path.join(BASE_DIR, 'data', 'test', 'btcusdt回测1h.pkl')
                   ).execute()

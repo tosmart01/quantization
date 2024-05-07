@@ -16,3 +16,4 @@ loguru
 strenum
 python-binance
 scipy
+click

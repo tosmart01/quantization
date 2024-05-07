@@ -1,12 +1,25 @@
-## CoinDreamer
-<br>
+# CoinDreamer
 
-**警告⚠️:** 总体杠杆比例绝对不能超过5倍，否则有爆仓风险。<br><br>
-- (实盘测试过的) 自定义策略 + 回测 + 币安自动化交易的最小实现<br>
-- 目前实现做空策略, 下图所示，红色开空，绿色平仓 <br>
-- 手续费统一按 千分之一(0.001)计算，实际测试币安手续费在 0.0009- 0.00098 之间(非vip账户)，考虑到滑点统一按 0.001计算
-- 最终结果只返回 开仓价、平仓价格、日期，等字段，利润需要统一减去 0.001
-<br><br>
+## 经典技术分析与现代自动化交易的有机融合
+
+
+**警告⚠️：** 请注意，整体杠杆比例请勿超过5倍，否则存在爆仓风险。
+
+CoinDreamer 是一个融合传统技术分析与现代化自动交易的项目。致力于实现经典技术分析中的各种形态，
+**M头、W底、头肩顶、头肩底、旗形整理、收敛三角、圆弧顶、圆弧底、钻石底、上升通道、下降通道**等。
+结合现代自动化交易，对各种经典形态进行历史回测，实盘运行。
+<br>
+希望CoinDreamer能够为您的交易策略提供有效的支持和自动化实现。
+
+### 项目特点：
+
+- 提供(实盘测试验证过的) 自定义策略、回测功能以及币安自动化交易的最小实现。
+- 目前已实现M头和W底等经典形态策略。下图演示了M头做空策略，红色表示开空，绿色表示平仓。
+- 手续费统一按千分之一(0.001)计算，实际测试中，币安手续费在0.0009至0.00098之间(非VIP账户)。考虑到滑点，手续费统一按0.001计算。
+- 最终结果仅返回开仓价、平仓价格、日期等字段，利润需统一减去0.001。
+
+
+<br>
 
 ![](./asset/img/开仓点.png)
 
@@ -31,34 +44,39 @@
 
 ## 使用说明
 
-1. 配置 `config.settings` 文件，设置 `BINANCE_KEY`, `BINANCE_SECRET` 和其他环境变量。
+1. 配置 `config.settings` 文件，设置 `BINANCE_KEY`, `BINANCE_SECRET`, `PROXIES` 代理配置和其他环境变量。
 
 2. 运行
    
    - 实盘运行
-     <br><br>
-   ```python
-    # 设置策略
-    strategy = strategy_factory(name='m_head')
-    scheduler = BlockingScheduler()
-    # 时间周期
-    interval = '1h'
-    model = strategy(symbol="ETHUSDT",
-                     interval=interval,
-                     backtest=False,
-                     usdt=1200, #下单金额
-                     leverage=5, # 杠杆
-                     order_kind=OrderKindEnum.BINANCE,
-                     )
-    scheduler.add_job(model.execute, 'cron', hour='*',
-                      minute=CRON_INTERVAL[interval], second='40',
-                      )
-    scheduler.start()
-   ```
-   
+     <br>
    ```shell
-   # 运行实盘
-   python main.py
+   cd src
+   python main.py --help
+    Usage: main.py [OPTIONS]
+
+    Options:
+    --strategy [m_head|w_bottom]  策略选择，目前可选, m_head(M头),w_bottom(w底部)
+                                  [required]
+    --symbol TEXT                 币种选择，可选:XRPUSDT, BTCUSDT, BNBUSDT, BCHUSDT,
+                                      RSRUSDT, LUNCUSDT, STGUSDT, ETHUSDT, EOSUSDT,
+                                      ADAUSDT, RVNUSDT, ETCUSDT, DOGEUSDT
+                                  [required]
+    --interval TEXT               时间周期, 5m, 15m, 30m, 1h, 默认1h
+    --help                        Show this message and exit.
+   
+   # 执行M头 ，ETHUSDT 1小时周期策略
+   python main.py --strategy m_head --symbol ETHUSDT
+   
+   # 杠杆及金额设置
+   !!! 杠杆和金额为动态配置，无需重启服务
+   # 修改： order_info.json
+    {
+      "leverage": 5,
+      "buy_usdt": "80%"
+    }
+    杠杆: leverage 
+    金额: buy_usdt , 可指定固定金额: 500, 指定仓位百分比: "80%", 全仓: "ALL"
    ```
    
    - 回测
@@ -97,6 +115,7 @@
    - 运行回测
      
    ```shell
+   # 默认准备了 eth 和btc 近三年数据, 新数据需要自己按上面流程下载
    python /src/strategy/tests/m_test.py
    # 结果输出路径为 /src/strategy/tests/{symbol}_backdump.json
    ```

@@ -155,3 +155,11 @@ def get_m_head_entry_low_point(df: pd.DataFrame,
     if not low_point_left.empty:
         left_low_point = low_point_left.iloc[-1]
         return left_low_point
+
+
+def get_value_from_range(rules: list[tuple[float, float, float]], compare_value: float) -> float:
+    default_value = 3
+    for left, right, value in rules:
+        if left <= compare_value < right:
+            default_value = value
+    return default_value

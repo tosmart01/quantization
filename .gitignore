@@ -105,5 +105,7 @@ data
 .DS_Store
 src/config/dev.py
 src/data/*
+!src/data/test/btcusdt回测1h.pkl
+!src/data/test/ethusdt回测1h.pkl
 src/strategy/tests/*.json
 src/backdump.json
