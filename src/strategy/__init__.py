@@ -9,6 +9,7 @@ import warnings
 
 from exceptions.custom_exceptions import UnsupportedStrategyError
 from strategy.m_head import MHeadStrategy, BaseStrategy
+from strategy.w_bottom import WBottomStrategy
 
 warnings.filterwarnings("ignore")
 
@@ -16,5 +17,7 @@ warnings.filterwarnings("ignore")
 def strategy_factory(name: str) -> BaseStrategy.__class__:
     if name == 'm_head':
         return MHeadStrategy
+    elif name == 'w_bottom':
+        return WBottomStrategy
     else:
-        raise UnsupportedStrategyError(add_error_message="M策略")
+        raise UnsupportedStrategyError(add_error_message="M头, W底策略")
