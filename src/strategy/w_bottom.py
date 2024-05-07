@@ -64,21 +64,22 @@ class WBottomStrategy(BaseStrategy):
         return any(verify_list)
 
     def get_take_profit_price_range(self, left_bottom, right_bottom, head_point, current_k) -> tuple[float, float]:
-        min_profit_loss_ratio = 3
+        min_profit_take_ratio = 3
         max_take_price = (head_point.high - right_bottom.low) * 1.5 + right_bottom.low
         if left_bottom.low > right_bottom.low:
-            profit_loss_ratio = (head_point.close - current_k.close) / (current_k.close - right_bottom.low)
+            profit_take_ratio = (head_point.close - current_k.close) / (current_k.close - right_bottom.low)
             take_price = head_point.close
-            if profit_loss_ratio <= min_profit_loss_ratio:
-                take_price = (current_k.close - right_bottom.low) * min_profit_loss_ratio + current_k.close
+            if profit_take_ratio <= min_profit_take_ratio:
+                take_price = max((current_k.close - right_bottom.low) * min_profit_take_ratio + current_k.close, head_point.close)
                 take_price = min(max_take_price, take_price)
         else:
-            profit_loss_ratio = (head_point.high - current_k.close) / (current_k.close - right_bottom.low)
+            profit_take_ratio = (head_point.high - current_k.close) / (current_k.close - right_bottom.low)
             take_price = head_point.high
-            if profit_loss_ratio <= min_profit_loss_ratio:
-                take_price = (current_k.close - right_bottom.low) * min_profit_loss_ratio + current_k.close
+            if profit_take_ratio <= min_profit_take_ratio:
+                take_price = max((current_k.close - right_bottom.low) * min_profit_take_ratio + current_k.close, head_point.high)
                 take_price = min(max_take_price, take_price)
-        left = (take_price - current_k.close) * 0.8 + current_k.close
+        left_offset = min(min_profit_take_ratio / profit_take_ratio * 1.5, 0.8)
+        left = (take_price - current_k.close) * left_offset + current_k.close
         return left, take_price
 
     def check_w_bottom(self, df: pd.DataFrame, left_bottom: pd.Series, right_bottom: pd.Series):
@@ -101,6 +102,7 @@ class WBottomStrategy(BaseStrategy):
             expected_profit = (take_price - current_k.close) / current_k.close
             expected_loss = (current_k.close - right_bottom.low) / current_k.close
             profit_loss_ratio = expected_profit / expected_loss
+            print(f"{expected_profit:.4f}, {profit_loss_ratio:.2f} :----------")
             if profit_loss_ratio <= 1.5:
                 raise StrategyNotMatchError()
             # 必须cover手续费
@@ -162,9 +164,9 @@ class WBottomStrategy(BaseStrategy):
         if stop_loss:
             return
         profit_left, take_price = self.get_take_profit_price_range(order.left_bottom,
-                                                                                             order.right_bottom,
-                                                                                             order.head_point,
-                                                                                             order.start_data)
+                                                                   order.right_bottom,
+                                                                   order.head_point,
+                                                                   order.start_data)
         current_k = df.iloc[-1]
         start_k = df.loc[df.date == order.start_data.date].iloc[0]
         min_trade_day = 12
