@@ -19,34 +19,36 @@ class BaseStrategy(ABC):
 
     def __init__(self, symbol: str, interval: str = '15m', backtest: bool = False,
                  back_start_date: str = None, back_end_date: str = None, order_kind: OrderKindEnum = None,
-                 backtest_path: str=""):
+                 backtest_path: str = "", local_test: bool = False):
         from dataset.dataset_tools import DataModule
         self.data_module = DataModule()
         self.symbol = symbol
         self.interval = interval
         self.order_module = factory_order_model(order_kind)
         self.backtest_info = self.backtest_init(backtest, back_start_date, back_end_date, backtest_path)
+        self.local_test = local_test
 
     @property
     def leverage(self):
-        return order_config.leverage
+        return order_config.leverage(symbol=self.symbol)
 
     @property
     def buy_usdt(self):
         if self.backtest_info.open_back:
             return 100
         all_money = self.order_module.get_all_money()
-        if order_config.buy_usdt == 'ALL':
-            return round(all_money * 0.85, 2)
-        elif "%" in str(order_config.buy_usdt):
-            usdt = float(order_config.buy_usdt.split('%')[0]) / 100
+        _buy_usdt = order_config.buy_usdt(self.symbol)
+        if _buy_usdt == 'ALL':
+            return round(all_money * 0.9, 2)
+        elif "%" in str(_buy_usdt):
+            usdt = float(_buy_usdt.split('%')[0]) / 100
             return round(usdt * all_money, 2)
         else:
-            if order_config.buy_usdt > all_money:
-                logger.warning(f"{self.symbol=} 下单金额超过账户余额，改为使用账户余额85%下单")
-                return round(all_money * 0.85, 2)
+            if _buy_usdt > all_money:
+                logger.warning(f"{self.symbol=} 下单金额超过账户余额，改为使用账户余额90%下单")
+                return round(all_money * 0.9, 2)
             else:
-                return order_config.buy_usdt
+                return _buy_usdt
 
     def backtest_init(self, backtest, back_start_date, back_end_date, backtest_path: str) -> Backtest:
         if backtest:

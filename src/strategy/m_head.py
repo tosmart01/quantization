@@ -195,16 +195,17 @@ class MHeadStrategy(BaseStrategy):
 
     @record_time
     def execute(self, *args, **kwargs):
-        time_list = CRON_INTERVAL[self.interval]
-        current_minute = datetime.now().minute
-        if str(current_minute) not in time_list:
-            raise DateTimeError()
-        while True:
-            period = 60 - datetime.now().second
-            if period >= 3:
-                time.sleep(0.05)
-            else:
-                break
+        if not self.local_test:
+            time_list = CRON_INTERVAL[self.interval]
+            current_minute = datetime.now().minute
+            if str(current_minute) not in time_list:
+                raise DateTimeError()
+            while True:
+                period = 60 - datetime.now().second
+                if period >= 3:
+                    time.sleep(0.05)
+                else:
+                    break
         try:
             logger.info(f"symbol={self.symbol}开始执行,leverage={self.leverage}")
             order = self.order_module.get_open_order(self.symbol, self.backtest_info)

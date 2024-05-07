@@ -34,7 +34,6 @@ symbol_list = [
 def command(strategy: str = None, interval: str = '1h', symbol: str = 'ETHUSDT', ):
     strategy_model = strategy_factory(name=strategy)
     scheduler = BlockingScheduler()
-    interval = '1h'
     model_instance = strategy_model(symbol=symbol,
                                     interval=interval,
                                     backtest=False,

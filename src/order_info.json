@@ -1,4 +1,10 @@
 {
-  "leverage": 5,
-  "buy_usdt": "80%"
+  "ETHUSDT": {
+    "leverage": 5,
+    "buy_usdt": "80%"
+  },
+  "BTCUSDT": {
+    "leverage": 5,
+    "buy_usdt": 500
+  }
 }
