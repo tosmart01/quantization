@@ -7,14 +7,16 @@
 
 from service.email_service import send_mail
 from common.log import logger
+from config.settings import OPEN_EMAIL_NOTIFY
 
 
 def send_trade_email(subject: str, content: str, to_recipients: list[str]):
-    logger.info(f"开始发送邮件, {subject=}, {content=}, {to_recipients=}")
-    try:
-        send_mail(subject=subject, content=content, mail_to=to_recipients)
-    except Exception:
-        logger.exception(f"邮件发送失败, {subject=}, {content=}, {to_recipients=}")
-    else:
-        logger.info(f"邮件发送成功")
+    if OPEN_EMAIL_NOTIFY:
+        logger.info(f"开始发送邮件, {subject=}, {content=}, {to_recipients=}")
+        try:
+            send_mail(subject=subject, content=content, mail_to=to_recipients)
+        except Exception:
+            logger.exception(f"邮件发送失败, {subject=}, {content=}, {to_recipients=}")
+        else:
+            logger.info(f"邮件发送成功")
 

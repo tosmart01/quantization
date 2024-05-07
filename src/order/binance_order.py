@@ -112,8 +112,8 @@ class BinanceOrder(OrderMixin):
             Order.objects.update_by_id(order.db_id, properties={"active": False, "close_price": order.stop_price,
                                                                 "end_time": k.date.to_pydatetime(), "stop_loss": True,
                                                                 "end_data": series_to_dict(k)})
-            logger.info(f"symbol={order.symbol},触发止损")
-            send_trade_email(subject=f"symbol={order.symbol},触发止损",
-                             content=f"触发止损, 止损={(order.stop_price - order.open_price) / order.open_price :.2%}",
+            logger.info(f"symbol={order.symbol},触发止损, db_id={order.db_id}")
+            send_trade_email(subject=f"symbol={order.symbol},触发止损, db_id={order.db_id}",
+                             content=f"触发止损, 止损={abs(order.stop_price - order.open_price) / order.open_price :.2%}",
                              to_recipients=RECEIVE_EMAIL)
             return True

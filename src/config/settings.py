@@ -65,6 +65,7 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_PORT = int(os.getenv('HOST', 587))
 EMAIL_HOST = os.getenv("EMAIL_HOST")
 CACHE_DIR = os.getenv("CACHE_DIR", os.path.join(BASE_DIR, 'data', 'cache'))
+OPEN_EMAIL_NOTIFY = os.getenv("OPEN_EMAIL_NOTIFY", 1)
 if not os.path.exists(CACHE_DIR):
     os.makedirs(CACHE_DIR)
 
