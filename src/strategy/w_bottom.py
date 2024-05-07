@@ -15,8 +15,8 @@ from config.settings import NEAR_LOW_K_COUNT, CRON_INTERVAL
 from exceptions.custom_exceptions import StrategyNotMatchError, DateTimeError
 from order.enums import SideEnum, DirectionEnum
 from schema.order_schema import OrderModel, OrderDataDict
-from src.strategy.base import BaseStrategy
-from src.strategy.strategy_helper import (
+from strategy.base import BaseStrategy
+from strategy.strategy_helper import (
     find_low_index,
     recent_kline_avg_amplitude,
     find_high_index,

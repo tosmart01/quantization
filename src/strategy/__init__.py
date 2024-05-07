@@ -6,7 +6,6 @@
 # @Software: PyCharm
 import warnings
 
-
 from exceptions.custom_exceptions import UnsupportedStrategyError
 from strategy.m_head import MHeadStrategy, BaseStrategy
 from strategy.w_bottom import WBottomStrategy
