@@ -4,50 +4,43 @@
 # @Site: 
 # @File: export.py
 # @Software: PyCharm
+import os.path
+from datetime import timedelta
 
-from glob import glob
-from datetime import datetime
 import pandas as pd
+from binance.enums import HistoricalKlinesType
 
-symbol_list = [
-    'XRP/USDT',
-    'BTC/USDT',
-    'ATOM/USDT',
-    'BCH/USDT',
-    'RSR/USDT',
-    'LUNC/USDT',
-    'STG/USDT',
-    'ETH/USDT',
-    'EOS/USDT',
-    'ADA/USDT',
-    'RVN/USDT',
-    'ETC/USDT',
-    'DOGE/USDT',
-]
+from client.binance_client import client
+from common.tools import format_df
+from config.settings import BASE_DIR
 
-def export(file_list):
+
+def export(symbol, start_date: str, end_date: str, type = HistoricalKlinesType.FUTURES, interval='1h'):
     res = []
-    for path in file_list:
-        for symbol in symbol_list:
-            if symbol.split('/')[0] in path:
-                df = pd.read_csv(path,header=None)
-                if df.iloc[0,0] == 'open_time':
-                    df = df.iloc[1:,::]
-                    for i in range(5):
-                        df[i] = df[i].astype(float)
-                df[0] = df[0].apply(lambda x:datetime.fromtimestamp(x/1000))
-                df = df.iloc[::,:6]
-                df.columns = ['date','open','high','low','close','volume']
-                df['pct_change'] = df['close'].pct_change() * 100
-                df['symbol'] = symbol
-                res.append(df)
-
+    freq_map = {
+        '1h': 1000
+    }
+    date_range = pd.date_range(start_date, end_date, freq=f"{freq_map[interval]}h")
+    for date in date_range:
+        start = (date - timedelta(hours=8)).strftime('%Y-%m-%d')
+        end = (date + timedelta(hours=freq_map[interval]) - timedelta(hours=8)).strftime('%Y-%m-%d')
+        data = client.get_historical_klines(symbol=symbol, interval=interval, limit=1000,
+                         start_str=start,
+                         end_str=end, klines_type=type
+                         )
+        df = format_df(data, symbol)
+        res.append(df)
     total = pd.concat(res)
+    total = total.drop_duplicates(subset=['date']).sort_values('date').reset_index(drop=True)
     return total
 
 
 if __name__ == '__main__':
-    file_list = glob(r'/path/*.csv')
-    df = export(file_list)
-    print(df)
+    symbol = 'ETHUSDT'
+    interval = '1h'
+    for _type in [HistoricalKlinesType.FUTURES, HistoricalKlinesType.SPOT]:
+        df = export(symbol=symbol, start_date='2021-01-01', end_date='2024-05-09', interval=interval, type=_type)
+        save_path = os.path.join(os.path.dirname(BASE_DIR), 'test_data', f'{symbol}_{_type.name}_回测{interval}.pkl')
+        df.to_pickle(save_path)
+        print(df.shape, _type)
     # df.to_pickle(f"/path/symbol.pkl")

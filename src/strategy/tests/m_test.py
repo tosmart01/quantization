@@ -68,6 +68,6 @@ if __name__ == '__main__':
                   interval='1h',
                   backtest=True,
                   order_kind=OrderKindEnum.BINANCE,
-                  backtest_path=os.path.join(BASE_DIR, 'data', 'test', 'ethusdt回测1h.pkl')
+                  backtest_path=os.path.join(os.path.dirname(BASE_DIR), 'test_data', 'ETHUSDT_SPOT_回测1h.pkl')
                   ).execute()
 

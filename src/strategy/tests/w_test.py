@@ -8,6 +8,7 @@ import os
 import json
 
 from tqdm import tqdm
+import pandas as pd
 
 from common.json_encode import ComplexEncoder
 from common.log import logger
@@ -23,7 +24,7 @@ class TestWBottomStrategy(WBottomStrategy):
     def entry_signal(self):
         ### 测试使用 =========
         # test_dates = [
-        #     pd.to_datetime('2022-10-09 06:00:00')
+        #     pd.to_datetime('2024-05-08 08:00:00')
         # ]
         # df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
         # if df.iloc[-1]['date'] not in test_dates:
@@ -70,5 +71,5 @@ if __name__ == '__main__':
                   interval='15m',
                   backtest=True,
                   order_kind=OrderKindEnum.BINANCE,
-                  backtest_path=os.path.join(BASE_DIR, 'data', 'test', 'btcusdt回测1h.pkl')
+                  backtest_path=os.path.join(os.path.dirname(BASE_DIR), 'test_data', 'BTCUSDT_FUTURES_回测1h.pkl')
                   ).execute()

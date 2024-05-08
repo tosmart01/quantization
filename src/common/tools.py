@@ -52,7 +52,7 @@ def add_band_fields(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def format_df(data, symbol) -> pd.DataFrame:
+def format_df(data, symbol, add_field=True) -> pd.DataFrame:
     data = [i[:6] for i in data]
     df = pd.DataFrame(
         data, columns=["date", "open", "high", "low", "close", "volume"]
@@ -68,7 +68,8 @@ def format_df(data, symbol) -> pd.DataFrame:
     df['is_bull'] = df['close'] > df['open']
     # 去掉最后一行
     # df = df.iloc[:-1, ::]
-    df = add_band_fields(df)
+    if add_field:
+        df = add_band_fields(df)
     return df
 
 
