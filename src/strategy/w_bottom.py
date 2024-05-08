@@ -236,7 +236,7 @@ class WBottomStrategy(BaseStrategy):
                 raise DateTimeError()
             while True:
                 period = 60 - datetime.now().second
-                if period >= 3:
+                if period >= 4:
                     time.sleep(0.05)
                 else:
                     break
