@@ -15,7 +15,7 @@ from config.settings import CRON_INTERVAL, MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, C
     CONSOLIDATION_HIGH_COUNT, M_DECLINE_PERCENT, MAX_STOP_LOSS_RATIO, MAX_STOP_LOSS_PERCENT
 from strategy.base import BaseStrategy
 from strategy.strategy_helper import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
-    check_high_value_in_range, adapt_by_percent, get_m_head_entry_low_point, get_m_head_low_point
+    check_high_value_in_range, adapt_by_percent, get_m_head_entry_low_point
 from order.enums import DirectionEnum, SideEnum
 from schema.order_schema import OrderModel, OrderDataDict
 from exceptions.custom_exceptions import DateTimeError
@@ -23,11 +23,20 @@ from exceptions.custom_exceptions import DateTimeError
 
 class MHeadStrategy(BaseStrategy):
 
+    def get_future_data_diff_value(self, df: pd.DataFrame, start_data):
+        if self.backtest_info.open_back:
+            future = self.backtest_info.future_df.loc[self.backtest_info.future_df.date <=
+                                                      start_data.date].tail(30).reset_index(drop=True)
+            current_df = df.tail(30).reset_index(drop=True)
+            diff_value = (future.high - current_df.high).mean()
+            return diff_value
+
     @staticmethod
     def adapt_loss_ratio(df: pd.DataFrame) -> float:
         return (df.tr.mean() / df.close.mean()) * (M_DECLINE_PERCENT * MAX_STOP_LOSS_RATIO)
 
     def get_stop_loss_price(self, start_data: pd.Series, compare_data: pd.Series, df: pd.DataFrame) -> float:
+        # 形态判断使用现货，止损价格获取使用期货价格
         stop_ratio = self.adapt_loss_ratio(df)
         compare_high = max(compare_data.high, start_data.high)
         pct_change = (compare_high - start_data.close) / start_data.close
@@ -52,6 +61,11 @@ class MHeadStrategy(BaseStrategy):
             close_price = round_float_precision(start_data.close, close_price)
             logger.info(
                 f"{self.symbol}设置最大止损={(close_price - start_data.close) / start_data.close:.2%},  {start_data.date=}")
+        # diff_value = self.get_future_data_diff_value(df, start_data)
+        # if diff_value >= 0:
+        #     close_price += diff_value
+        # else:
+        #     close_price -= abs(diff_value)
         return close_price
 
     @staticmethod
@@ -127,6 +141,13 @@ class MHeadStrategy(BaseStrategy):
                 if last_k.close - last_k.open <= 1.5 * am:
                     return True
 
+    @staticmethod
+    def get_take_point(current_k: pd.Series, compare_high_k: pd.Series, future_df: pd.DataFrame):
+        # 入场判断使用现货价格，止盈价格使用期货价格
+        min_ix = future_df.loc[
+            (future_df.date <= current_k.date) & (future_df.date >= compare_high_k.date), 'low'].idxmin()
+        return future_df.loc[min_ix]
+
     def check_near_prior_high_point(self, df: pd.DataFrame) -> OrderModel:
         high_index_list = find_high_index(df)
         if len(high_index_list) >= 2:
@@ -137,7 +158,12 @@ class MHeadStrategy(BaseStrategy):
                 compare_high_k = df.loc[high_index_list[index]]
                 verify = self.find_enter_point(compare_high_k, df, last_high_k)
                 if verify:
-                    low_point = get_m_head_low_point(df, compare_high_k, current_k)
+                    # 现货识别形态，期货价格开单
+                    df = self.data_module.get_futures_klines(self.symbol, interval=self.interval,
+                                                                    backtest_info=self.backtest_info)
+                    compare_high_k = df.loc[(df.date == compare_high_k.date)].iloc[0]
+                    current_k = df.loc[(df.date == current_k.date)].iloc[0]
+                    low_point = self.get_take_point(current_k, compare_high_k, df)
                     stop_price = self.get_stop_loss_price(current_k, compare_high_k, df)
                     return OrderModel(symbol=self.symbol,
                                       active=True, start_time=current_k.date,
@@ -163,7 +189,9 @@ class MHeadStrategy(BaseStrategy):
             return order
 
     def exit_signal(self, order: OrderModel):
-        df = self.data_module.get_klines(order.symbol, interval=order.interval, backtest_info=self.backtest_info)
+        if self.backtest_info.open_back:
+            self.backtest_info.flush_k()
+        df = self.data_module.get_futures_klines(order.symbol, interval=order.interval, backtest_info=self.backtest_info)
         stop_loss = self.order_module.check_stop_loss(order, df, DirectionEnum.SHORT, self.backtest_info)
         if stop_loss:
             return
@@ -173,14 +201,15 @@ class MHeadStrategy(BaseStrategy):
         start_k = df.loc[df['date'] == order.start_data.date].iloc[0]
         am = recent_kline_avg_amplitude(df.loc[current_k.name - 9: current_k.name])
         trade_days = current_k.name - start_k.name >= min_k_count
+        take_price = order.low_point.low
         if order.low_point is not None and trade_days:
             # 近3跟k线接近前期低点，并且当前k线收阳线，平仓
             for row in df.loc[current_k.name - 2: current_k.name].itertuples():
-                if abs(row.low - order.low_point.low) <= am * 0.10 and current_k.is_bull:
+                if abs(row.low - take_price) <= am * 0.10 and current_k.is_bull:
                     checkout = True
                     break
                 # 如果已经低于前期低点，收阳线平仓
-                if row.low < order.low_point.low and current_k.is_bull:
+                if row.low < take_price and current_k.is_bull:
                     checkout = True
                     break
         if not checkout:

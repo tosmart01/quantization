@@ -4,6 +4,8 @@
 # @Site: 
 # @File: backtest.py
 # @Software: PyCharm
+from typing import Optional
+
 import pandas as pd
 from pydantic import BaseModel, ConfigDict
 
@@ -19,3 +21,9 @@ class Backtest(BaseModel):
     start_offset: int = None
     end_offset: int = None
     order_list: list[OrderModel] = []
+    future_df: Optional[pd.DataFrame] = None
+
+
+    def flush_k(self):
+        self.start_offset += 1
+        self.end_offset += 1

@@ -121,6 +121,11 @@ class WBottomStrategy(BaseStrategy):
             # 下引线过长排除
             if shadow_ratio >= 0.5 and current_am * 1.4 < right_bottom.high - right_bottom.low:
                 raise StrategyNotMatchError()
+            # 识别形态使用现货价格，之后开单，停损，止盈使用期货价格
+            df = self.data_module.get_futures_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
+            current_k = df.loc[(df.date == current_k.date)].iloc[0]
+            left_bottom = df.loc[(df.date == left_bottom.date)].iloc[0]
+            right_bottom = df.loc[(df.date == right_bottom.date)].iloc[0]
             head_point = self.get_head_point(df, left_bottom, right_bottom)
             take_price_offset, take_price = self.get_take_profit_price_range(
                 df, left_bottom, right_bottom, head_point, current_k
@@ -186,7 +191,9 @@ class WBottomStrategy(BaseStrategy):
             return order
 
     def exit_signal(self, order: OrderModel):
-        df = self.data_module.get_klines(
+        if self.backtest_info.open_back:
+            self.backtest_info.flush_k()
+        df = self.data_module.get_futures_klines(
             order.symbol, interval=order.interval, backtest_info=self.backtest_info
         )
         stop_loss = self.order_module.check_stop_loss(order, df, DirectionEnum.LONG, self.backtest_info)

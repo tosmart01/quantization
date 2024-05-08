@@ -19,13 +19,13 @@ class BaseStrategy(ABC):
 
     def __init__(self, symbol: str, interval: str = '15m', backtest: bool = False,
                  back_start_date: str = None, back_end_date: str = None, order_kind: OrderKindEnum = None,
-                 backtest_path: str = "", local_test: bool = False):
+                 backtest_path: str = "", local_test: bool = False, backtest_future_path: str = None):
         from dataset.dataset_tools import DataModule
         self.data_module = DataModule()
         self.symbol = symbol
         self.interval = interval
         self.order_module = factory_order_model(order_kind)
-        self.backtest_info = self.backtest_init(backtest, back_start_date, back_end_date, backtest_path)
+        self.backtest_info = self.backtest_init(backtest, back_start_date, back_end_date, backtest_path, backtest_future_path)
         self.local_test = local_test
 
     @property
@@ -50,9 +50,10 @@ class BaseStrategy(ABC):
             else:
                 return _buy_usdt
 
-    def backtest_init(self, backtest, back_start_date, back_end_date, backtest_path: str) -> Backtest:
+    def backtest_init(self, backtest, back_start_date, back_end_date, backtest_path: str, backtest_future_path: str) -> Backtest:
         if backtest:
             test_df = self.data_module.load_fake_klines(backtest_path)
+            future_test_df = self.data_module.load_fake_klines(backtest_future_path)
             if back_start_date and back_end_date:
                 test_df = test_df.loc[(test_df['date'] >= back_start_date) & (test_df['date'] <= back_end_date)]
             if test_df.empty:
@@ -63,7 +64,8 @@ class BaseStrategy(ABC):
                             df=test_df,
                             open_back=True,
                             start_offset=start_offset,
-                            end_offset=end_offset
+                            end_offset=end_offset,
+                            future_df=future_test_df,
                             )
         return Backtest(symbol=self.symbol)
 

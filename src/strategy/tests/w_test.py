@@ -71,5 +71,6 @@ if __name__ == '__main__':
                   interval='15m',
                   backtest=True,
                   order_kind=OrderKindEnum.BINANCE,
-                  backtest_path=os.path.join(os.path.dirname(BASE_DIR), 'test_data', 'BTCUSDT_FUTURES_回测1h.pkl')
+                  backtest_path=os.path.join(os.path.dirname(BASE_DIR), 'test_data', 'BTCUSDT_SPOT_回测1h.pkl'),
+                  backtest_future_path=os.path.join(os.path.dirname(BASE_DIR), 'test_data', 'BTCUSDT_FUTURES_回测1h.pkl')
                   ).execute()

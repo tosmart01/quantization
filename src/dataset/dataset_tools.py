@@ -17,16 +17,30 @@ from exceptions.custom_exceptions import TestEndingError
 class DataModule:
 
     @retry(tries=3, delay=3)
-    def fetch(self, symbol, interval, limit) -> list[list]:
+    def spot_fetch(self, symbol, interval, limit) -> list[list]:
         data = client.get_klines(symbol=symbol, interval=interval, limit=limit)
         return data
+
+    @retry(tries=3, delay=3)
+    def futures_fetch(self, symbol, interval, limit) -> list[list]:
+        data = client.futures_klines(symbol=symbol, interval=interval, limit=limit)
+        return data
+
+    def get_futures_klines(self, symbol: str, interval: str = '5m', limit: int = TRADE_MAX_INTERVAL,
+                           backtest_info: Backtest = None) -> pd.DataFrame:
+
+        if backtest_info.open_back:
+            return self.get_fake_futures_klines(backtest_info)
+        data = self.futures_fetch(symbol, interval, limit)
+        df = format_df(data, symbol)
+        return df
 
     def get_klines(self, symbol: str, interval: str = '5m', limit: int = TRADE_MAX_INTERVAL,
                    backtest_info: Backtest = None) -> pd.DataFrame:
 
         if backtest_info.open_back:
             return self.get_fake_klines(backtest_info)
-        data = self.fetch(symbol, interval, limit)
+        data = self.spot_fetch(symbol, interval, limit)
         df = format_df(data, symbol)
         return df
 
@@ -38,6 +52,14 @@ class DataModule:
         backtest_info.start_offset += 1
         backtest_info.end_offset += 1
         return df
+
+    @staticmethod
+    def get_fake_futures_klines(backtest_info: Backtest) -> pd.DataFrame:
+        df = backtest_info.df.loc[backtest_info.start_offset - 1: backtest_info.end_offset - 1].reset_index(drop=True)
+        if df.empty or backtest_info.end_offset - 1 > len(backtest_info.df):
+            raise TestEndingError()
+        future_df = backtest_info.future_df
+        return future_df.loc[(future_df.date >= df.date.iloc[0]) & (future_df.date <= df.date.iloc[-1])].reset_index(drop=True)
 
     @staticmethod
     def load_fake_klines(backtest_path: str) -> pd.DataFrame:

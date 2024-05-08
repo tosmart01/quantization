@@ -126,25 +126,25 @@ def get_lower_shadow_ratio(data: pd.Series) -> float:
 
 def get_m_head_low_point(df: pd.DataFrame, compare_k: pd.Series,
                          current_k: pd.Series) -> pd.Series | None:
-    low_index_list = find_low_index(df)
-    low_df = df.loc[low_index_list]
-    low_point_left = low_df.loc[low_df['date'] < compare_k.date]
-    low_point_right = low_df.loc[low_df['date'] > compare_k.date]
-    low_point = None
-    if not low_point_right.empty:
-        low_point = low_point_right.iloc[0]
-    elif not low_point_left.empty:
-        low_point = low_point_left.iloc[-1]
-    start_k = df.loc[df['date'] == current_k.date].iloc[-1]
-    if abs(start_k.name - low_point.name) <= MIN_TRADE_COUNT:
-        min_index = df.loc[(df.date > compare_k.date) &
-                           (df.date < current_k.date), 'low'].idxmin()
-        min_point: pd.Series = df.loc[min_index]
-        if min_point.low <= low_point.low:
-            low_point = min_point
-    # if (order.compare_data.high - low_point.low) / low_point.low > M_DECLINE_PERCENT * 2:
-    #     low_point.low = order.start_data.close * (1 - M_DECLINE_PERCENT * 1.5)
-    return low_point
+    idx_min = df.loc[compare_k.name: current_k.name, 'low'].idxmin()
+    return df.loc[idx_min]
+    # low_index_list = find_low_index(df)
+    # low_df = df.loc[low_index_list]
+    # low_point_left = low_df.loc[low_df['date'] < compare_k.date]
+    # low_point_right = low_df.loc[low_df['date'] > compare_k.date]
+    # low_point = None
+    # if not low_point_right.empty:
+    #     low_point = low_point_right.iloc[0]
+    # elif not low_point_left.empty:
+    #     low_point = low_point_left.iloc[-1]
+    # start_k = df.loc[df['date'] == current_k.date].iloc[-1]
+    # if abs(start_k.name - low_point.name) <= MIN_TRADE_COUNT:
+    #     min_index = df.loc[(df.date > compare_k.date) &
+    #                        (df.date < current_k.date), 'low'].idxmin()
+    #     min_point: pd.Series = df.loc[min_index]
+    #     if min_point.low <= low_point.low:
+    #         low_point = min_point
+    # return low_point
 
 
 def get_m_head_entry_low_point(df: pd.DataFrame,

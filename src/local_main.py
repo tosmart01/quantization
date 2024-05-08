@@ -7,7 +7,7 @@ from order.enums import OrderKindEnum
 
 if __name__ == '__main__':
     model = strategy_factory('m_head')
-    model(symbol='BTCUSDT',
+    model(symbol='ETHUSDT',
           interval='1h',
           backtest=False,
           local_test=True,
