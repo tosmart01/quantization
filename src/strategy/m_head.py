@@ -221,27 +221,3 @@ class MHeadStrategy(BaseStrategy):
                 checkout = True
         if checkout or current_k.name - start_k.name >= 200:
             self.order_module.close_order(self.backtest_info, order, df)
-
-    @record_time
-    def execute(self, *args, **kwargs):
-        if not self.local_test:
-            time_list = CRON_INTERVAL[self.interval]
-            current_minute = datetime.now().minute
-            if str(current_minute) not in time_list:
-                raise DateTimeError()
-            while True:
-                period = 60 - datetime.now().second
-                if period >= 4:
-                    time.sleep(0.05)
-                else:
-                    break
-        try:
-            logger.info(f"symbol={self.symbol}开始执行,leverage={self.leverage}")
-            order = self.order_module.get_open_order(self.symbol, self.backtest_info)
-            if order:
-                self.exit_signal(order)
-            else:
-                self.entry_signal()
-        except Exception as e:
-            logger.exception(f"执行异常")
-            raise e

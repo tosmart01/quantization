@@ -4,11 +4,14 @@
 # @Site: 
 # @File: base.py
 # @Software: PyCharm
+import time
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 from common.log import logger
-from config.settings import TRADE_MAX_INTERVAL
-from exceptions.custom_exceptions import DataDeficiencyError
+from common.tools import record_time
+from config.settings import TRADE_MAX_INTERVAL, CRON_INTERVAL
+from exceptions.custom_exceptions import DataDeficiencyError, DateTimeError
 from order import factory_order_model
 from schema.backtest import Backtest
 from order.enums import OrderKindEnum
@@ -77,6 +80,27 @@ class BaseStrategy(ABC):
     def exit_signal(self, *args, **kwargs):
         ...
 
-    @abstractmethod
+    @record_time
     def execute(self, *args, **kwargs):
-        ...
+        if not self.local_test:
+            time_list = CRON_INTERVAL[self.interval]
+            current_minute = datetime.now().minute
+            if str(current_minute) not in time_list:
+                raise DateTimeError()
+            start_time = datetime.now().replace(second=57, microsecond=500 * 1000)
+            while True:
+                if (datetime.now() - start_time).total_seconds() < 0:
+                    time.sleep(0.05)
+                else:
+                    break
+        try:
+            logger.info(f"symbol={self.symbol}开始执行,leverage={self.leverage}")
+            order = self.order_module.get_open_order(self.symbol, self.backtest_info)
+            if order:
+                self.exit_signal(order)
+            else:
+                self.entry_signal()
+        except Exception as e:
+            logger.exception(f"执行异常")
+            raise e
+
