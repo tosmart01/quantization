@@ -64,6 +64,8 @@ def format_df(data, symbol, add_field=True) -> pd.DataFrame:
     df["symbol"] = symbol
     # 振幅
     df['tr'] = df['high'] - df['low']
+    # 实体长度
+    df['entity'] = (df['close'] - df['open']).abs()
     # 阳线阴线
     df['is_bull'] = df['close'] > df['open']
     # 去掉最后一行

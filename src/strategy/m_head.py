@@ -4,21 +4,17 @@
 # @Site: 
 # @File: m_head.py
 # @Software: PyCharm
-import time
-from datetime import datetime
-
 import pandas as pd
 
 from common.log import logger
-from common.tools import record_time, round_float_precision
-from config.settings import CRON_INTERVAL, MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT, \
+from common.tools import round_float_precision
+from config.settings import  MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT, \
     CONSOLIDATION_HIGH_COUNT, M_DECLINE_PERCENT, MAX_STOP_LOSS_RATIO, MAX_STOP_LOSS_PERCENT
 from strategy.base import BaseStrategy
 from strategy.strategy_helper import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
     check_high_value_in_range, adapt_by_percent, get_m_head_entry_low_point
 from order.enums import DirectionEnum, SideEnum
 from schema.order_schema import OrderModel, OrderDataDict
-from exceptions.custom_exceptions import DateTimeError
 
 
 class MHeadStrategy(BaseStrategy):
@@ -205,11 +201,7 @@ class MHeadStrategy(BaseStrategy):
         if order.low_point is not None and trade_days:
             # 近3跟k线接近前期低点，并且当前k线收阳线，平仓
             for row in df.loc[current_k.name - 2: current_k.name].itertuples():
-                if abs(row.low - take_price) <= am * 0.10 and current_k.is_bull:
-                    checkout = True
-                    break
-                # 如果已经低于前期低点，收阳线平仓
-                if row.low < take_price and current_k.is_bull:
+                if row.low - take_price <= am * 0.35 and current_k.is_bull:
                     checkout = True
                     break
         if not checkout:
