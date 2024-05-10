@@ -26,24 +26,19 @@ class Config:
 
     def get_key(self, symbol, key):
         change_time = os.path.getmtime(self.json_path)
-        if not self.last_change_time:
-            self.last_change_time = change_time
-            self.config_dict = self.load_json()
-            return self.config_dict[symbol][key]
         if self.last_change_time != change_time:
             self.last_change_time = change_time
             self.config_dict = self.load_json()
             logger.info(f"订单配置热重载, config={self.config_dict}")
-            return self.config_dict[symbol][key]
-        else:
-            return self.config_dict[symbol][key]
+        return self.config_dict[symbol].get(key)
 
     def buy_usdt(self, symbol: str):
         return self.get_key(symbol, 'buy_usdt')
 
+    def max_usdt(self, symbol: str):
+        return self.get_key(symbol, 'max_usdt')
+
     def leverage(self, symbol: str):
         return self.get_key(symbol, 'leverage')
 
-
 order_config = Config()
-

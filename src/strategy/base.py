@@ -41,17 +41,21 @@ class BaseStrategy(ABC):
             return 100
         all_money = self.order_module.get_all_money()
         _buy_usdt = order_config.buy_usdt(self.symbol)
+        max_usdt = order_config.max_usdt(self.symbol)
         if _buy_usdt == 'ALL':
-            return round(all_money * 0.9, 2)
+            return_u = round(all_money * 0.9, 2)
         elif "%" in str(_buy_usdt):
             usdt = float(_buy_usdt.split('%')[0]) / 100
-            return round(usdt * all_money, 2)
+            return_u = round(usdt * all_money, 2)
         else:
             if _buy_usdt > all_money:
                 logger.warning(f"{self.symbol=} 下单金额超过账户余额，改为使用账户余额90%下单")
-                return round(all_money * 0.9, 2)
+                return_u = round(all_money * 0.9, 2)
             else:
-                return _buy_usdt
+                return_u = _buy_usdt
+        if max_usdt and return_u > max_usdt:
+            return max_usdt
+        return return_u
 
     def backtest_init(self, backtest, back_start_date, back_end_date, backtest_path: str, backtest_future_path: str) -> Backtest:
         if backtest:
