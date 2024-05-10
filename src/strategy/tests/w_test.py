@@ -68,7 +68,7 @@ class TestWBottomStrategy(WBottomStrategy):
 
 if __name__ == '__main__':
     TestWBottomStrategy(symbol="BTCUSDT",
-                  interval='15m',
+                  interval='1h',
                   backtest=True,
                   order_kind=OrderKindEnum.BINANCE,
                   backtest_path=os.path.join(os.path.dirname(BASE_DIR), 'test_data', 'BTCUSDT_SPOT_回测1h.pkl'),
