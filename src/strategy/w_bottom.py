@@ -74,21 +74,33 @@ class WBottomStrategy(BaseStrategy):
 
     @staticmethod
     def get_min_profit_loss_ratio(df: pd.DataFrame) -> float:
-        volatility = df.tr.mean()
+        # volatility = df.tr.mean()
+        # profit_loss_map = [
+        #     (0, 150, 0.8,),
+        #     (150, 200, 2.8,),
+        #     (200, 450, 3.0,),
+        #     (450, 600, 3.2,),
+        #     (600, 100000, 3.5),
+        # ]
+        volatility = (df.tr.mean() / df.close.mean()) * 10000
         profit_loss_map = [
-            (0, 150, 0.8,),
-            (150, 200, 2.8,),
-            (200, 450, 3.0,),
-            (450, 600, 3.4,),
-            (600, 100000, 3.5),
+            (0, 50, 0.5,),
+            (50, 70, 1.0,),
+            (70, 90, 2.7,),
+            (90, 150, 3.,),
+            (150, 6000, 3.4,),
         ]
-        return get_value_from_range(profit_loss_map, volatility)
+        expected_volatility = get_value_from_range(profit_loss_map, volatility)
+        if df.close.mean() <= df.close.iloc[0]:
+            if expected_volatility > 2:
+                return 2
+        return expected_volatility
 
     def get_take_profit_price_range(self, df, left_bottom, right_bottom, head_point, current_k) -> tuple[float, float]:
         min_profit_loss_ratio = self.get_min_profit_loss_ratio(df)
         max_take_price = (head_point.high - right_bottom.low) * 1.5 + right_bottom.low
         if left_bottom.low > right_bottom.low:
-            profit_loss_ratio = (head_point.close - current_k.close) / (current_k.close - right_bottom.low)
+            profit_loss_ratio = (head_point.high - current_k.close) / (current_k.close - right_bottom.low)
             take_price = head_point.close
             if profit_loss_ratio <= min_profit_loss_ratio:
                 take_price = (current_k.close - right_bottom.low) * min_profit_loss_ratio + current_k.close
