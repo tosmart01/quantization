@@ -43,7 +43,7 @@ def command(strategy: str = None, interval: str = '1h', symbol: str = 'ETHUSDT',
     scheduler.add_job(model_instance.execute, 'cron', hour='*', name=f"{symbol}-{strategy}",
                       minute=CRON_INTERVAL[interval], second='40',
                       )
-    scheduler.add_job(heartbeat, 'cron', args=(strategy,), hour='*', name=f"{symbol}-{strategy}心跳检测",
+    scheduler.add_job(heartbeat, 'cron', args=(strategy, symbol), hour='*', name=f"{symbol}-{strategy}心跳检测",
                       minute='15,30,45,55',second='40')
     scheduler.start()
 
