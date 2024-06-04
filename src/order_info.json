@@ -1,11 +1,11 @@
 {
   "ETHUSDT": {
-    "leverage": 5,
-    "buy_usdt": "70%"
+    "leverage": 6,
+    "buy_usdt": 4600
   },
   "BTCUSDT": {
     "leverage": 10,
-    "buy_usdt": 1500,
-    "max_usdt": 1600
+    "buy_usdt": 2600,
+    "max_usdt": 2600
   }
 }

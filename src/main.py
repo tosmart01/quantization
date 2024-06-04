@@ -8,6 +8,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 from config.settings import CRON_INTERVAL
 from strategy import strategy_factory
 from order.enums import OrderKindEnum
+from heartbeat.beat import heartbeat
 
 symbol_list = [
     'XRPUSDT',
@@ -39,9 +40,11 @@ def command(strategy: str = None, interval: str = '1h', symbol: str = 'ETHUSDT',
                                     backtest=False,
                                     order_kind=OrderKindEnum.BINANCE,
                                     )
-    scheduler.add_job(model_instance.execute, 'cron', hour='*', name=symbol,
+    scheduler.add_job(model_instance.execute, 'cron', hour='*', name=f"{symbol}-{strategy}",
                       minute=CRON_INTERVAL[interval], second='40',
                       )
+    scheduler.add_job(heartbeat, 'cron', args=(strategy,), hour='*', name=f"{symbol}-{strategy}心跳检测",
+                      minute='11',second='40')
     scheduler.start()
 
 
