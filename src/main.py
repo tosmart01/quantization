@@ -44,7 +44,7 @@ def command(strategy: str = None, interval: str = '1h', symbol: str = 'ETHUSDT',
                       minute=CRON_INTERVAL[interval], second='40',
                       )
     scheduler.add_job(heartbeat, 'cron', args=(strategy,), hour='*', name=f"{symbol}-{strategy}心跳检测",
-                      minute='56',second='40')
+                      minute='15,30,45,55',second='40')
     scheduler.start()
 
 
