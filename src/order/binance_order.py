@@ -4,6 +4,7 @@
 # @Site: 
 # @File: BinanceOrder.py
 # @Software: PyCharm
+import time
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -36,7 +37,7 @@ class BinanceOrder(OrderMixin):
             return self.get_open_fake_order(symbol, backtest)
         binance_order = market.get_open_order(symbol=symbol)
         db_order = Order.objects.get_order_by_symbol(symbol=symbol)
-        if binance_order or db_order:
+        if db_order:
             return db_order.to_schema()
 
     @error_email_notify(name="创建订单失败")
@@ -47,6 +48,7 @@ class BinanceOrder(OrderMixin):
         market.set_leverage(order_schema.symbol, order_schema.leverage)
         usdt = order_schema.leverage * usdt
         order = market.create_order(order_schema.symbol, side=order_schema.side, usdt=usdt)
+        time.sleep(0.1)
         open_price = float(market.get_open_order(order_schema.symbol)['entryPrice'])
         k: pd.Series = df.iloc[-1]
         order_model = Order.objects.create(symbol=order_schema.symbol,

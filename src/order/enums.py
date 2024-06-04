@@ -8,6 +8,11 @@ from strenum import StrEnum
 from enum import auto
 
 
+class DirectionEnum(StrEnum):
+    SHORT = auto()
+    LONG = auto()
+
+
 class SideEnum(StrEnum):
     SELL = auto()
     BUY = auto()
@@ -18,14 +23,13 @@ class SideEnum(StrEnum):
         if self == SideEnum.BUY:
             return SideEnum.SELL
 
-
-class DirectionEnum(StrEnum):
-    SHORT = auto()
-    LONG = auto()
+    def direction(self):
+        if self == SideEnum.SELL:
+            return DirectionEnum.SHORT
+        return DirectionEnum.LONG
 
 
 class OrderKindEnum(StrEnum):
     BINANCE = auto()
     FUTURE = auto()
     STOCK = auto()
-

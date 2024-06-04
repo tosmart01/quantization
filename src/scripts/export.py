@@ -51,9 +51,9 @@ def export(symbol, start_date: str, end_date: str, type=HistoricalKlinesType.FUT
 
 if __name__ == '__main__':
     symbol = 'BTCUSDT'
-    interval = '1h'
+    interval = '4h'
     for _type in [HistoricalKlinesType.FUTURES, HistoricalKlinesType.SPOT]:
-        df = export(symbol=symbol, start_date='2021-01-01', end_date='2024-05-11', interval=interval, type=_type)
+        df = export(symbol=symbol, start_date='2021-01-01', end_date='2024-05-30', interval=interval, type=_type)
         save_path = os.path.join(os.path.dirname(BASE_DIR), 'test_data', f'{symbol}_{_type.name}_回测{interval}.pkl')
         df.to_pickle(save_path)
         print(df.shape, _type)

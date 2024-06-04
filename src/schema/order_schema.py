@@ -61,6 +61,7 @@ class OrderModel(BaseModel):
     head_point: Optional[OrderDataDict] = None
     left_bottom: Optional[OrderDataDict] = None
     right_bottom: Optional[OrderDataDict] = None
+    tr_ratio: Optional[float] = None
 
     def __str__(self):
         return f"{self.symbol=},{self.active=},{self.start_time=},{self.end_time}"

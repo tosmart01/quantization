@@ -67,6 +67,6 @@ class DataModule:
         df['tr'] = df['high'] - df['low']
         df['is_bull'] = df['close'] > df['open']
         df['entity'] = (df['close'] - df['open']).abs()
-        # df = df.loc[(df['date'] >= '2023-01-01 00:00:00') & (df['date'] < '2023-12-28 23:30:00') ].reset_index(drop=True)
+        df = df.loc[(df['date'] >= '2021-01-01 00:00:00') & (df['date'] < '2023-12-28 23:30:00') ].reset_index(drop=True)
         df = add_band_fields(df)
         return df.reset_index(drop=True)
