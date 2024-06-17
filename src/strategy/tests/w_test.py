@@ -31,19 +31,7 @@ class TestWBottomStrategy(WBottomStrategy):
         #     return
         ### ============
         self.t.update(1)
-        df = self.data_module.get_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
-        try:
-            order_schema = self.find_w_bottom_entry(df)
-        except StrategyNotMatchError:
-            order_schema = None
-        if order_schema:
-            logger.info(f"条件单出现, symbol={self.symbol}, 日期={df.iloc[-1]['date']}")
-            order = self.order_module.create_order(backtest=self.backtest_info,
-                                                   df=df,
-                                                   usdt=self.buy_usdt,
-                                                   order_schema=order_schema
-                                                   )
-            return order
+        super().entry_signal()
 
     @record_time
     def execute(self, *args, **kwargs):

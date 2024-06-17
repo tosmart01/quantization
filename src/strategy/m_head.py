@@ -10,6 +10,7 @@ from common.log import logger
 from common.tools import round_float_precision
 from config.settings import  MIN_TRADE_COUNT, NEAR_HIGH_K_COUNT, COMPARE_HIGH_K_COUNT, \
     CONSOLIDATION_HIGH_COUNT, M_DECLINE_PERCENT, MAX_STOP_LOSS_RATIO, MAX_STOP_LOSS_PERCENT
+from exceptions.custom_exceptions import StrategyNotMatchError
 from strategy.base import BaseStrategy
 from strategy.strategy_helper import recent_kline_avg_amplitude, find_high_index, get_shadow_line_ratio, \
     check_high_value_in_range, adapt_by_percent, get_m_head_entry_low_point
@@ -18,7 +19,9 @@ from schema.order_schema import OrderModel, OrderDataDict
 
 
 class MHeadStrategy(BaseStrategy):
-
+    weekday_filter = [6]
+    weekday_leverage_up = [3, ]
+    weekday_leverage_down = [7, 2]
     def get_future_data_diff_value(self, df: pd.DataFrame, start_data):
         if self.backtest_info.open_back:
             future = self.backtest_info.future_df.loc[self.backtest_info.future_df.date <=
@@ -177,12 +180,17 @@ class MHeadStrategy(BaseStrategy):
         order_schema = self.check_near_prior_high_point(df)
         if order_schema:
             logger.info(f"条件单出现, symbol={self.symbol}, 日期={df.iloc[-1]['date']}")
-            order = self.order_module.create_order(backtest=self.backtest_info,
-                                                   df=df,
-                                                   usdt=self.buy_usdt,
-                                                   order_schema=order_schema
-                                                   )
-            return order
+            try:
+                self.filter_order(order_schema)
+            except StrategyNotMatchError:
+                return order_schema
+            else:
+                order = self.order_module.create_order(backtest=self.backtest_info,
+                                                       df=df,
+                                                       usdt=self.buy_usdt,
+                                                       order_schema=order_schema
+                                                       )
+                return order
 
     def exit_signal(self, order: OrderModel):
         if self.backtest_info.open_back:

@@ -32,6 +32,9 @@ class WBottomStrategy(BaseStrategy):
     w_decline_percent = 2.8
     loss_decrease_percent = 0.4
     max_stop_loss = 0.03
+    weekday_filter = []
+    weekday_leverage_up = [1, ]
+    weekday_leverage_down = [6, ]
 
     def get_stop_price(self, df: pd.DataFrame, right_bottom: pd.Series, current_k: pd.Series) -> float:
         stop_pct_change = (
@@ -194,13 +197,18 @@ class WBottomStrategy(BaseStrategy):
             order_schema = None
         if order_schema:
             logger.info(f"条件单出现, symbol={self.symbol}, 日期={df.iloc[-1]['date']}")
-            order = self.order_module.create_order(
-                backtest=self.backtest_info,
-                df=df,
-                usdt=self.buy_usdt,
-                order_schema=order_schema,
-            )
-            return order
+            try:
+                self.filter_order(order_schema)
+            except StrategyNotMatchError:
+                return order_schema
+            else:
+                order = self.order_module.create_order(
+                    backtest=self.backtest_info,
+                    df=df,
+                    usdt=self.buy_usdt,
+                    order_schema=order_schema,
+                )
+                return order
 
     def exit_signal(self, order: OrderModel):
         if self.backtest_info.open_back:

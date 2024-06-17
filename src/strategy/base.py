@@ -11,14 +11,19 @@ from datetime import datetime
 from common.log import logger
 from common.tools import record_time
 from config.settings import TRADE_MAX_INTERVAL, CRON_INTERVAL
-from exceptions.custom_exceptions import DataDeficiencyError, DateTimeError
+from exceptions.custom_exceptions import DataDeficiencyError, DateTimeError, StrategyNotMatchError
 from order import factory_order_model
 from schema.backtest import Backtest
 from order.enums import OrderKindEnum
 from config.order_config import order_config
+from schema.order_schema import OrderModel
 
 
 class BaseStrategy(ABC):
+    weekday_filter = []
+    weekday_leverage_up = []
+    weekday_leverage_down = []
+
 
     def __init__(self, symbol: str, interval: str = '15m', backtest: bool = False,
                  back_start_date: str = None, back_end_date: str = None, order_kind: OrderKindEnum = None,
@@ -30,6 +35,18 @@ class BaseStrategy(ABC):
         self.order_module = factory_order_model(order_kind)
         self.backtest_info = self.backtest_init(backtest, back_start_date, back_end_date, backtest_path, backtest_future_path)
         self.local_test = local_test
+
+    def filter_order(self, order_schema: OrderModel):
+        weekday = order_schema.start_time.weekday() + 1
+        if weekday in self.weekday_filter:
+            logger.warning(f"星期过滤器生效,{weekday=}, 条件单symbol={self.symbol}")
+            raise StrategyNotMatchError()
+        if weekday in self.weekday_leverage_up:
+            logger.warning(f"星期杠杆增强生效,{weekday=}，条件单symbol={self.symbol}")
+            order_schema.leverage = order_schema.leverage + 2
+        if weekday in self.weekday_leverage_down:
+            logger.warning(f"星期杠杆降低生效,{weekday=}，条件单symbol={self.symbol}")
+            order_schema.leverage = order_schema.leverage - 2
 
     @property
     def leverage(self):
