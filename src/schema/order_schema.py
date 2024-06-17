@@ -61,6 +61,7 @@ class OrderModel(BaseModel):
     head_point: Optional[OrderDataDict] = None
     left_bottom: Optional[OrderDataDict] = None
     right_bottom: Optional[OrderDataDict] = None
+    take_price: Optional[float] = None
     tr_ratio: Optional[float] = None
 
     def __str__(self):

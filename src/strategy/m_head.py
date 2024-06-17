@@ -156,7 +156,7 @@ class MHeadStrategy(BaseStrategy):
                 if verify:
                     # 现货识别形态，期货价格开单
                     df = self.data_module.get_futures_klines(self.symbol, interval=self.interval,
-                                                                    backtest_info=self.backtest_info)
+                                                                    backtest_info=self.backtest_info, extra=True)
                     compare_high_k = df.loc[(df.date == compare_high_k.date)].iloc[0]
                     current_k = df.loc[(df.date == current_k.date)].iloc[0]
                     low_point = self.get_take_point(current_k, compare_high_k, df)
@@ -187,7 +187,7 @@ class MHeadStrategy(BaseStrategy):
     def exit_signal(self, order: OrderModel):
         if self.backtest_info.open_back:
             self.backtest_info.flush_k()
-        df = self.data_module.get_futures_klines(order.symbol, interval=order.interval, backtest_info=self.backtest_info)
+        df = self.data_module.get_futures_klines(order.symbol, interval=order.interval, backtest_info=self.backtest_info, extra=True)
         stop_loss = self.order_module.check_stop_loss(order, df, DirectionEnum.SHORT, self.backtest_info)
         if stop_loss:
             return

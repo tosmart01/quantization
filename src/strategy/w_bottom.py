@@ -134,7 +134,7 @@ class WBottomStrategy(BaseStrategy):
             if shadow_ratio >= 0.5 and current_am * 1.4 < right_bottom.high - right_bottom.low:
                 raise StrategyNotMatchError()
             # 识别形态使用现货价格，之后开单，停损，止盈使用期货价格
-            df = self.data_module.get_futures_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info)
+            df = self.data_module.get_futures_klines(self.symbol, interval=self.interval, backtest_info=self.backtest_info, extra=True)
             current_k = df.loc[(df.date == current_k.date)].iloc[0]
             left_bottom = df.loc[(df.date == left_bottom.date)].iloc[0]
             right_bottom = df.loc[(df.date == right_bottom.date)].iloc[0]
@@ -206,7 +206,7 @@ class WBottomStrategy(BaseStrategy):
         if self.backtest_info.open_back:
             self.backtest_info.flush_k()
         df = self.data_module.get_futures_klines(
-            order.symbol, interval=order.interval, backtest_info=self.backtest_info
+            order.symbol, interval=order.interval, backtest_info=self.backtest_info, extra=True
         )
         stop_loss = self.order_module.check_stop_loss(order, df, DirectionEnum.LONG, self.backtest_info)
         if stop_loss:
