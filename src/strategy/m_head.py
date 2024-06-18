@@ -20,8 +20,8 @@ from schema.order_schema import OrderModel, OrderDataDict
 
 class MHeadStrategy(BaseStrategy):
     weekday_filter = [6]
-    weekday_leverage_up = [3, ]
-    weekday_leverage_down = [7, 2]
+    weekday_leverage_up = [3, 1]
+    weekday_leverage_down = [7]
     def get_future_data_diff_value(self, df: pd.DataFrame, start_data):
         if self.backtest_info.open_back:
             future = self.backtest_info.future_df.loc[self.backtest_info.future_df.date <=

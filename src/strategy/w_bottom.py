@@ -33,8 +33,8 @@ class WBottomStrategy(BaseStrategy):
     loss_decrease_percent = 0.4
     max_stop_loss = 0.03
     weekday_filter = []
-    weekday_leverage_up = [1, ]
-    weekday_leverage_down = [6, ]
+    weekday_leverage_up = [1, 2]
+    weekday_leverage_down = [4, ]
 
     def get_stop_price(self, df: pd.DataFrame, right_bottom: pd.Series, current_k: pd.Series) -> float:
         stop_pct_change = (
