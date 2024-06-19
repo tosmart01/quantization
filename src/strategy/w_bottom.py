@@ -33,8 +33,8 @@ class WBottomStrategy(BaseStrategy):
     loss_decrease_percent = 0.4
     max_stop_loss = 0.03
     weekday_filter = []
-    weekday_leverage_up = [1, 2]
-    weekday_leverage_down = [4, ]
+    weekday_leverage_up = [1, 2, 3]
+    weekday_leverage_down = [4, 7]
 
     def get_stop_price(self, df: pd.DataFrame, right_bottom: pd.Series, current_k: pd.Series) -> float:
         stop_pct_change = (
@@ -146,7 +146,8 @@ class WBottomStrategy(BaseStrategy):
                 df, left_bottom, right_bottom, head_point, current_k
             )
             expected_profit = (take_price - current_k.close) / current_k.close
-            expected_loss = (current_k.close - right_bottom.low) / current_k.close
+            stop_price = self.get_stop_price(df, right_bottom, current_k)
+            expected_loss = (current_k.close - stop_price) / current_k.close
             profit_loss_ratio = expected_profit / expected_loss
             if profit_loss_ratio < 1:
                 raise StrategyNotMatchError()
