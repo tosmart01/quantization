@@ -104,7 +104,7 @@ class BaseStrategy(ABC):
     @record_time
     def execute(self, *args, **kwargs):
         logger.info(f"{self.symbol}, 当前星期过滤器={self.weekday_filter=}, {self.weekday_leverage_up=}, {self.weekday_leverage_down=}")
-        if not self.local_test:
+        if not self.local_test and not self.backtest_info.open_back:
             time_list = CRON_INTERVAL[self.interval]
             current_minute = datetime.now().minute
             if str(current_minute) not in time_list:
